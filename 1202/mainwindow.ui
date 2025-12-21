@@ -63,6 +63,19 @@
      <string>Disconnect</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="btn_trace_test">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>100</y>
+      <width>93</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Trace Test</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

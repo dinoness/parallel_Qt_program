@@ -30,8 +30,17 @@ public:
     //
     void up_State();
 
+    // 连接
+    void connect_Ether();
+
     // 断连
     void closeEther();
+
+    // 轨迹输入测试
+    void trace_test();
+
+    //指令反馈
+    void commandCheckHandler(const char *command, int ret);
 
 private slots:
     void on_btn_ip_scan_clicked();
@@ -39,6 +48,8 @@ private slots:
     void on_btn_connect_controller_clicked();
 
     void on_btn_disconnect_controller_clicked();
+
+    void on_btn_trace_test_clicked();
 
 private:
     Ui::MainWindow *ui;
