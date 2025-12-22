@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "zaux.h"
 #include "zmotion.h"
+#include "robo_trace.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -38,6 +39,7 @@ public:
 
     // 轨迹输入测试
     void trace_test();
+    void trace_generation_test();
 
     //指令反馈
     void commandCheckHandler(const char *command, int ret);
@@ -51,6 +53,11 @@ private slots:
 
     void on_btn_trace_test_clicked();
 
+
+    void on_btn_trace_generation_test_clicked();
+
+public:
+    robo_trace robo_trace_;
 private:
     Ui::MainWindow *ui;
 };

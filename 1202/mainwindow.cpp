@@ -21,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     setWindowTitle("M");
+
     Init();
 }
 
@@ -34,6 +35,10 @@ void MainWindow::Init()
 {
     g_handle = 0;
     m_nTimerId = -1;
+
+    ui->ledit_data_file_name->setText("00");
+
+
 }
 
 void MainWindow::ip_Scan()
@@ -168,6 +173,13 @@ void MainWindow::trace_test()
     qDebug() << "Trace test over.";
 }
 
+void MainWindow::trace_generation_test()
+{
+    robo_trace_.trace_to_file1(ui->ledit_data_file_name->text());
+    qDebug() << "Trace generation over.";
+    qDebug() << "File is in build folder.";
+}
+
 
 void MainWindow::commandCheckHandler(const char *command, int ret)
 {
@@ -238,5 +250,11 @@ void MainWindow::on_btn_disconnect_controller_clicked()
 void MainWindow::on_btn_trace_test_clicked()
 {
     trace_test();
+}
+
+
+void MainWindow::on_btn_trace_generation_test_clicked()
+{
+    trace_generation_test();
 }
 
