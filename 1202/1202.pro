@@ -34,3 +34,10 @@ INCLUDEPATH += $$PWD/lib
 DEPENDPATH += $$PWD/lib
 
 
+QXLSX_PARENTPATH=$$PWD/QXlsx/         # ./当前工程目录路径 指定QXlsx
+QXLSX_HEADERPATH=$$PWD/QXlsx/header/  # ./当前工程目录路径 指定header文件
+QXLSX_SOURCEPATH=$$PWD/QXlsx/source/  # ./当前工程目录路径 指定source文件
+include($$PWD/QXlsx/QXlsx.pri)
+
+# include($$PWD/QXlsx/QXlsx.pri)             # QXlsx源代码
+# INCLUDEPATH += $$PWD/QXlsx

@@ -40,6 +40,9 @@ public:
     // 轨迹输入测试
     void trace_test();
     void trace_generation_test();
+    void trace_read_test();
+    void trace_to_xlsx();
+    void xlsx_to_dat();
 
     //指令反馈
     void commandCheckHandler(const char *command, int ret);
@@ -55,6 +58,12 @@ private slots:
 
 
     void on_btn_trace_generation_test_clicked();
+
+    void on_btn_trace_read_clicked();
+
+    void on_btn_trace_to_xlsx_clicked();
+
+    void on_btn_xlsx_to_dat_clicked();
 
 public:
     robo_trace robo_trace_;

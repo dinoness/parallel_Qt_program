@@ -36,7 +36,8 @@ void MainWindow::Init()
     g_handle = 0;
     m_nTimerId = -1;
 
-    ui->ledit_data_file_name->setText("00");
+    ui->ledit_data_file_name->setText("02");
+    ui->ledit_xlsx_file_name->setText("11");
 
 
 }
@@ -175,11 +176,29 @@ void MainWindow::trace_test()
 
 void MainWindow::trace_generation_test()
 {
+    // qDebug() << QCoreApplication::applicationDirPath();
     robo_trace_.trace_to_file1(ui->ledit_data_file_name->text());
     qDebug() << "Trace generation over.";
     qDebug() << "File is in build folder.";
 }
 
+void MainWindow::trace_read_test()
+{
+    robo_trace_.trace_read(ui->ledit_data_file_name->text());
+}
+
+void MainWindow::trace_to_xlsx()
+{
+    robo_trace_.trace_to_xlsx(ui->ledit_data_file_name->text(), ui->ledit_xlsx_file_name->text());
+    qDebug() << "trace_to_xlsx over";
+}
+
+void MainWindow::xlsx_to_dat()
+{
+    robo_trace_.xlsx_to_dat(ui->ledit_data_file_name->text(), ui->ledit_xlsx_file_name->text());
+    qDebug() << "xlsx_to_dat over";
+
+}
 
 void MainWindow::commandCheckHandler(const char *command, int ret)
 {
@@ -191,7 +210,7 @@ void MainWindow::commandCheckHandler(const char *command, int ret)
     }
 }
 
-// =========== SLOT FUNCTION ===========
+// ======================= SLOT FUNCTION ==========================
 
 // ip 扫描按钮
 void MainWindow::on_btn_ip_scan_clicked()
@@ -245,8 +264,6 @@ void MainWindow::on_btn_disconnect_controller_clicked()
 }
 
 
-
-
 void MainWindow::on_btn_trace_test_clicked()
 {
     trace_test();
@@ -256,5 +273,23 @@ void MainWindow::on_btn_trace_test_clicked()
 void MainWindow::on_btn_trace_generation_test_clicked()
 {
     trace_generation_test();
+}
+
+
+void MainWindow::on_btn_trace_read_clicked()
+{
+    trace_read_test();
+}
+
+
+void MainWindow::on_btn_trace_to_xlsx_clicked()
+{
+    trace_to_xlsx();
+}
+
+
+void MainWindow::on_btn_xlsx_to_dat_clicked()
+{
+    xlsx_to_dat();
 }
 
