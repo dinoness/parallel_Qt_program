@@ -11,13 +11,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    robo_trace.cpp
+    robot_trace.cpp
 
 HEADERS += \
     lib/zaux.h \
     lib/zmotion.h \
     mainwindow.h \
-    robo_trace.h
+    robot_trace.h
 
 FORMS += \
     mainwindow.ui

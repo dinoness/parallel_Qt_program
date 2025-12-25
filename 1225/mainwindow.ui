@@ -174,32 +174,6 @@
      <string>Xlsx to Dat</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="btn_thread_open">
-    <property name="geometry">
-     <rect>
-      <x>50</x>
-      <y>100</y>
-      <width>111</width>
-      <height>28</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Thread Open</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btn_thread_close">
-    <property name="geometry">
-     <rect>
-      <x>180</x>
-      <y>100</y>
-      <width>111</width>
-      <height>28</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Thread Close</string>
-    </property>
-   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
