@@ -78,11 +78,23 @@ bool robot_trace::trace_to_dat_test(const QString& cus_file_name)
         out << value; // 流式写入，自动处理二进制编码
     }
 
+    u_data[0] = 2;
+    u_data[1] = 0;  // mm
+    u_data[2] = 0;  // mm
+    u_data[3] = 0;
+    u_data[4] = 0;
+    u_data[5] = 0;
+    u_data[6] = 0;  // ticks
+
+    for (float value : u_data) {
+        out << value; // 流式写入，自动处理二进制编码
+    }
+
     for(i = 0; i < 100; i++)
     {
         u_data[0] = 10;
-        u_data[1] = (i + 1) * 1;  // mm
-        u_data[2] = (i + 1) * 1;  // mm
+        u_data[1] = (i + 1) * 0.5;  // mm
+        u_data[2] = (i + 1) * 0.5;  // mm
         u_data[3] = 0;
         u_data[4] = 0;
         u_data[5] = 0;
@@ -95,8 +107,8 @@ bool robot_trace::trace_to_dat_test(const QString& cus_file_name)
     for(i = 0; i < 100; i++)
     {
         u_data[0] = 10;
-        u_data[1] = 100 - (i + 1) * 1;  // mm
-        u_data[2] = 100 + (i + 1) * 1;  // mm
+        u_data[1] = 50 - (i + 1) * 0.5;  // mm
+        u_data[2] = 50 + (i + 1) * 0.5;  // mm
         u_data[3] = 0;
         u_data[4] = 0;
         u_data[5] = 0;
@@ -166,6 +178,12 @@ bool robot_trace::trace_to_controller(ZMC_HANDLE g_handle, const QString& cus_fi
         do
         {
             ZAux_Modbus_Get4x(g_handle, cur_group_id, 1, &data_state);
+            qDebug() << "cur_group_id = " << cur_group_id;
+            qDebug() << "data_state = " << data_state;
+
+            //可加一个关闭线程的变量
+            // 是否连接控制器，需要判定
+
         }while(!(data_state != F_DataUpdate));
 
         //数据获取
@@ -180,23 +198,37 @@ bool robot_trace::trace_to_controller(ZMC_HANDLE g_handle, const QString& cus_fi
             {
                 in >> data_list[i_file];
             }else
-            {  // 若在文件末尾，则读上一组数据，使其保持在原位
-                if(i_file <CmdSize)
+            {  // 空指令给MOVE(0)
+                if(i_file % CmdSize)
                 {
-                    if(loop_num != 0)
-                    {
-                        data_list[i_file] = data_list[i_file + DataBlockSize -CmdSize];
-                    }
-                    else
-                    {
-                        data_list[i_file] = 0;  // 如果是第一次读入，就赋值0
-                    }
+                    data_list[i_file] = 0;
                 }
                 else
                 {
-                    data_list[i_file] = data_list[i_file -CmdSize];
+                    data_list[i_file] = 1;
                 }
+                // if(i_file <CmdSize)
+                // {
+                //     if(loop_num != 0)
+                //     {
+                //         data_list[i_file] = data_list[i_file + DataBlockSize -CmdSize];
+                //     }
+                //     else
+                //     {
+                //         data_list[i_file] = 0;  // 如果是第一次读入，就赋值0
+                //     }
+                // }
+                // else
+                // {
+                //     data_list[i_file] = data_list[i_file -CmdSize];
+                // }
             }
+
+            // ============Test line============
+            // if(i_file >= CmdSize)
+            // {
+            //     break;
+            // }
         }
 
 
@@ -209,6 +241,8 @@ bool robot_trace::trace_to_controller(ZMC_HANDLE g_handle, const QString& cus_fi
         ZAux_Modbus_Set4x(g_handle, cur_group_id, 1, &data_state);
 
         loop_num++;
+        qDebug() << "loop_num = " << loop_num;
+        // break;  // ============Test line============
 
     }
 
