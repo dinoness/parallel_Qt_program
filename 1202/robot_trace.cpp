@@ -179,23 +179,34 @@ bool robot_trace::trace_to_controller(ZMC_HANDLE g_handle, const QString& cus_fi
             if(!in.atEnd())
             {
                 in >> data_list[i_file];
-            }else
-            {  // 若在文件末尾，则读上一组数据，使其保持在原位
-                if(i_file <CmdSize)
+            }
+            else
+            {
+                // 都给M(0)
+                if((i_file % CmdSize) != 0)
                 {
-                    if(loop_num != 0)
-                    {
-                        data_list[i_file] = data_list[i_file + DataBlockSize -CmdSize];
-                    }
-                    else
-                    {
-                        data_list[i_file] = 0;  // 如果是第一次读入，就赋值0
-                    }
+                    data_list[i_file] = 0;
                 }
                 else
                 {
-                    data_list[i_file] = data_list[i_file -CmdSize];
+                    data_list[i_file] = 1;
                 }
+                // 若在文件末尾，则读上一组数据，使其保持在原位
+                // if(i_file < CmdSize)
+                // {
+                //     if(loop_num != 0)
+                //     {
+                //         data_list[i_file] = data_list[i_file + DataBlockSize -CmdSize];
+                //     }
+                //     else
+                //     {
+                //         data_list[i_file] = 0;  // 如果是第一次读入，就赋值0
+                //     }
+                // }
+                // else
+                // {
+                //     data_list[i_file] = data_list[i_file -CmdSize];
+                // }
             }
         }
 
