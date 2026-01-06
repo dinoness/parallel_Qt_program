@@ -16,9 +16,6 @@
 //  2 MOVEABS走直线绝对
 // 10 MOVE_PTABS单位时间距离绝对
 
-// 伺服周期 = 1ms
-// 运动速度 = 运动长度(um)/（ticks * 伺服周期）
-// 规定长度的单位为um
 
 robot_trace::robot_trace()
 {
@@ -47,6 +44,7 @@ bool robot_trace::trace_to_dat_test(const QString& cus_file_name)
     // 设置双精度浮点数精度为标准32位
     out.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
+    int i;
     float u_data[CmdSize];
     // sin-shape 1
     // for(i = 0; i < 360; i++)
@@ -66,116 +64,75 @@ bool robot_trace::trace_to_dat_test(const QString& cus_file_name)
 
     // }
 
-    // ================= 2 axis,line move =================
-    // u_data[0] = 2;
-    // u_data[1] = 20 * 1000;  // um
-    // u_data[2] = 20 * 1000;  // um
-    // u_data[3] = 0;
-    // u_data[4] = 0;
-    // u_data[5] = 0;
-    // u_data[6] = 0;  // ticks
-
-    // for (float value : u_data) {
-    //     out << value; // 流式写入，自动处理二进制编码
-    // }
-
-    // u_data[0] = 2;
-    // u_data[1] = 0;  // um
-    // u_data[2] = 0;  // um
-    // u_data[3] = 0;
-    // u_data[4] = 0;
-    // u_data[5] = 0;
-    // u_data[6] = 0;  // ticks
-
-    // for (float value : u_data) {
-    //     out << value; // 流式写入，自动处理二进制编码
-    // }
-
-    // for(i = 0; i < 100; i++)
-    // {
-    //     u_data[0] = 10;
-    //     u_data[1] = (i + 1) * 0.5 * 1000;  // um
-    //     u_data[2] = (i + 1) * 0.5 * 1000;  // um
-    //     u_data[3] = 0;
-    //     u_data[4] = 0;
-    //     u_data[5] = 0;
-    //     u_data[6] = 100;  // ticks
-
-    //     for (float value : u_data) {
-    //         out << value; // 流式写入，自动处理二进制编码
-    //     }
-    // }
-    // for(i = 0; i < 100; i++)
-    // {
-    //     u_data[0] = 10;
-    //     u_data[1] = 50 * 1000 - (i + 1) * 0.5 * 1000;  // um
-    //     u_data[2] = 50 * 1000 + (i + 1) * 0.5 * 1000;  // um
-    //     u_data[3] = 0;
-    //     u_data[4] = 0;
-    //     u_data[5] = 0;
-    //     u_data[6] = 100;  // ticks
-
-    //     for (float value : u_data) {
-    //         out << value; // 流式写入，自动处理二进制编码
-    //     }
-    // }
-
-    // u_data[0] = 2;
-    // u_data[1] = 20 * 1000;  // um
-    // u_data[2] = 20 * 1000;  // um
-    // u_data[3] = 0;
-    // u_data[4] = 0;
-    // u_data[5] = 0;
-    // u_data[6] = 0;  // ticks
-
-    // for (float value : u_data) {
-    //     out << value; // 流式写入，自动处理二进制编码
-    // }
-    // ================= 2 axis,line move =================
-
-    // 5轴回零后的坐标记为[0 0 -555*1000 0 0]
-    // ================= 5 axis,screw =================
-    float n_ticks = 50;
-    float z_height = -650 * 1000;
-    float R0 = 30 * 1000;
+    // 2 axis,line move
 
     u_data[0] = 2;
-    u_data[1] = 0;  // um
-    u_data[2] = R0;  // um
-    u_data[3] = z_height;
-    u_data[4] = 0;
-    u_data[5] = 0;
-    u_data[6] = n_ticks;  // ticks
-    for (float value : u_data) {out << value;}
-
-    float point_num = 60 * 1000 / n_ticks;
-    float time_seg = n_ticks / 1000;  // seccond
-    float vR = R0 / 60;
-    for(int i = 1; i <= point_num; i++)
-    {
-        u_data[0] = 10;
-        u_data[1] = (R0 - vR * i * time_seg) * sin(PI / 10 * i * time_seg);  // um
-        u_data[2] = (R0 - vR * i * time_seg) * cos(PI / 10 * i * time_seg);  // um
-        u_data[3] = z_height;
-        u_data[4] = 0;
-        u_data[5] = 0;
-        u_data[6] = n_ticks;  // ticks
-        for (float value : u_data) {out << value;}
-    }
-
-    u_data[0] = 2;
-    u_data[1] = 0;  // um
-    u_data[2] = 0;  // um
-    u_data[3] = -555*1000;
+    u_data[1] = 20;  // mm
+    u_data[2] = 20;  // mm
+    u_data[3] = 0;
     u_data[4] = 0;
     u_data[5] = 0;
     u_data[6] = 0;  // ticks
-    for (float value : u_data) {out << value;}
-    // ================= 5 axis,screw =================
+
+    for (float value : u_data) {
+        out << value; // 流式写入，自动处理二进制编码
+    }
+
+    u_data[0] = 2;
+    u_data[1] = 0;  // mm
+    u_data[2] = 0;  // mm
+    u_data[3] = 0;
+    u_data[4] = 0;
+    u_data[5] = 0;
+    u_data[6] = 0;  // ticks
+
+    for (float value : u_data) {
+        out << value; // 流式写入，自动处理二进制编码
+    }
+
+    for(i = 0; i < 100; i++)
+    {
+        u_data[0] = 10;
+        u_data[1] = (i + 1) * 0.5;  // mm
+        u_data[2] = (i + 1) * 0.5;  // mm
+        u_data[3] = 0;
+        u_data[4] = 0;
+        u_data[5] = 0;
+        u_data[6] = 100;  // ticks
+
+        for (float value : u_data) {
+            out << value; // 流式写入，自动处理二进制编码
+        }
+    }
+    for(i = 0; i < 100; i++)
+    {
+        u_data[0] = 10;
+        u_data[1] = 50 - (i + 1) * 0.5;  // mm
+        u_data[2] = 50 + (i + 1) * 0.5;  // mm
+        u_data[3] = 0;
+        u_data[4] = 0;
+        u_data[5] = 0;
+        u_data[6] = 100;  // ticks
+
+        for (float value : u_data) {
+            out << value; // 流式写入，自动处理二进制编码
+        }
+    }
+
+    u_data[0] = 2;
+    u_data[1] = 20;  // mm
+    u_data[2] = 20;  // mm
+    u_data[3] = 0;
+    u_data[4] = 0;
+    u_data[5] = 0;
+    u_data[6] = 0;  // ticks
+
+    for (float value : u_data) {
+        out << value; // 流式写入，自动处理二进制编码
+    }
 
 
     data_file.close();
-    qDebug() << "Trace to dat over.";
 
     return true;
 }
@@ -224,7 +181,7 @@ bool robot_trace::trace_to_controller(ZMC_HANDLE g_handle, const QString& cus_fi
             qDebug() << "cur_group_id = " << cur_group_id;
             qDebug() << "data_state = " << data_state;
 
-            // 可加一个关闭线程的变量
+            //可加一个关闭线程的变量
             // 是否连接控制器，需要判定
 
         }while(!(data_state != F_DataUpdate));
@@ -252,8 +209,29 @@ bool robot_trace::trace_to_controller(ZMC_HANDLE g_handle, const QString& cus_fi
                 {
                     data_list[i_file] = 1;
                 }
+                // 若在文件末尾，则读上一组数据，使其保持在原位
+                // if(i_file < CmdSize)
+                // {
+                //     if(loop_num != 0)
+                //     {
+                //         data_list[i_file] = data_list[i_file + DataBlockSize -CmdSize];
+                //     }
+                //     else
+                //     {
+                //         data_list[i_file] = 0;  // 如果是第一次读入，就赋值0
+                //     }
+                // }
+                // else
+                // {
+                //     data_list[i_file] = data_list[i_file -CmdSize];
+                // }
             }
 
+            // ============Test line============
+            // if(i_file >= CmdSize)
+            // {
+            //     break;
+            // }
         }
 
 
@@ -267,6 +245,7 @@ bool robot_trace::trace_to_controller(ZMC_HANDLE g_handle, const QString& cus_fi
 
         loop_num++;
         qDebug() << "loop_num = " << loop_num;
+        // break;  // ============Test line============
 
     }
 
@@ -366,6 +345,21 @@ bool robot_trace::dat_to_xlsx(const QString& dat_file_name, const QString& xlsx_
                 {
                     data_list[i_file] = 1;
                 }
+                // if(i_file < CmdSize)
+                // {
+                //     if(loop_num != 0)
+                //     {
+                //         data_list[i_file] = data_list[i_file + DataBlockSize - CmdSize];
+                //     }
+                //     else
+                //     {
+                //         data_list[i_file] = 0;  // 如果是第一次读入，就赋值0
+                //     }
+                // }
+                // else
+                // {
+                //     data_list[i_file] = data_list[i_file - CmdSize];
+                // }
             }
         }
 
@@ -387,7 +381,6 @@ bool robot_trace::dat_to_xlsx(const QString& dat_file_name, const QString& xlsx_
 
     xlsx_close();
     data_file.close();
-    qDebug() << "Dat to xlsx over";
     return true;
 }
 

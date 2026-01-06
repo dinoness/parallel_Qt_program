@@ -65,6 +65,8 @@ private slots:
 
     void on_btn_trace_test_clicked();
 
+    void on_btn_trace_generation_test_clicked();
+
     void on_btn_trace_read_clicked();
 
     void on_btn_trace_to_xlsx_clicked();
@@ -74,8 +76,6 @@ private slots:
     void on_btn_thread_open_clicked();
 
     void on_btn_thread_close_clicked();
-
-    void on_btn_trace_to_dat_clicked();
 
 signals:
     void s_trace_to_dat_test(const QString& cus_file_name);

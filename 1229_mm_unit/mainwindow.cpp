@@ -160,6 +160,7 @@ void MainWindow::connect_Ether()
     {
         ZAux_Close(g_handle);  // 与控制器断开连接
         killTimer(m_nTimerId);
+        // setWindowTitle("PC与下位机程序通讯");
     }
 
     iresult = ZAux_OpenEth(tmp_buff,&g_handle);
@@ -185,7 +186,7 @@ void MainWindow::closeEther()
         g_handle = nullptr;
         killTimer(m_nTimerId);
         m_nTimerId = -1;
-        qDebug() << "EtherNet关闭";
+        qDebug() << "关闭";
     }
 }
 
@@ -321,6 +322,12 @@ void MainWindow::on_btn_trace_test_clicked()
 }
 
 
+void MainWindow::on_btn_trace_generation_test_clicked()
+{
+    trace_generation_test();
+}
+
+
 void MainWindow::on_btn_trace_read_clicked()
 {
     trace_read_test();
@@ -348,11 +355,5 @@ void MainWindow::on_btn_thread_open_clicked()
 void MainWindow::on_btn_thread_close_clicked()
 {
     thread_close();
-}
-
-
-void MainWindow::on_btn_trace_to_dat_clicked()
-{
-    trace_generation_test();
 }
 
