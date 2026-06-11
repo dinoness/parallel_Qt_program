@@ -1,18 +1,39 @@
 #include "TrajectoryService.h"
 
 #include <QDebug>
+#include <QMetaObject>
 
 #include "../motion/TrajectoryGenerator.h"
-#include "../motion/TrajectoryTypes.h"
 
 TrajectoryService::TrajectoryService(ZMotionDriver* driver,
+                                     ControllerProtocol* protocol,
                                      const QString& dataDir,
                                      QObject* parent)
     : QObject(parent),
       driver_(driver),
+      protocol_(protocol),
       file_(dataDir)
 {
 }
+
+TrajectoryService::~TrajectoryService()
+{
+    cancelSendTrajectory();
+
+    if (sendThread_ != nullptr) {
+        sendThread_->quit();
+        sendThread_->wait(3000);
+    }
+
+    cleanupSendThread();
+}
+
+bool TrajectoryService::isSending() const
+{
+    return sending_;
+}
+
+// ── 文件操作 ──────────────────────────────────────────────────────
 
 Result TrajectoryService::generateAndSave(const QString& fileName)
 {
@@ -23,6 +44,12 @@ Result TrajectoryService::generateAndSave(const QString& fileName)
     }
 
     return file_.writeDat(fileName, points);
+}
+
+Result TrajectoryService::loadPoints(const QString& fileName,
+                                      QVector<TrajectoryPoint>& points)
+{
+    return file_.readDat(fileName, points);
 }
 
 Result TrajectoryService::datToCsv(const QString& datFile, const QString& csvFile)
@@ -43,7 +70,9 @@ Result TrajectoryService::csvToDat(const QString& csvFile, const QString& datFil
     return file_.writeDat(datFile, points);
 }
 
-Result TrajectoryService::sendToController(const QString& fileName)
+// ── 同步下发（调试用，UI 不应直接调用） ──────────────────────────
+
+Result TrajectoryService::sendToControllerSync(const QString& fileName)
 {
     if (driver_ == nullptr) {
         return Result::fail(2102, "ZMotionDriver 未初始化");
@@ -57,62 +86,96 @@ Result TrajectoryService::sendToController(const QString& fileName)
     Result readRet = file_.readDat(fileName, points);
     if (!readRet.ok) return readRet;
 
-    qDebug() << "sendToController: read" << points.size() << "points";
+    qDebug() << "sendToControllerSync: read" << points.size() << "points";
 
-    Result ret = driver_->trigger();
-    if (!ret.ok) return ret;
-
-    int loopNum = 0;
-    int totalPoints = points.size();
-    float blockData[kDataBlockSize];
-
-    while (loopNum * kDataGroupSize < totalPoints) {
-        int curGroupId = loopNum % kDataGroupNum;
-
-        // 等待控制器缓冲区有空位
-        uint16 dataState;
-        do {
-            ret = driver_->readModbusReg(curGroupId, dataState);
-            if (!ret.ok) {
-                qDebug() << "readModbusReg failed in send loop:" << ret.message;
-                return ret;
-            }
-        } while (dataState == kDataUpdate);
-
-        // 填充数据块
-        int baseIdx = loopNum * kDataGroupSize;
-        for (int i = 0; i < kDataGroupSize; i++) {
-            int ptIdx = baseIdx + i;
-            if (ptIdx < totalPoints) {
-                points[ptIdx].toArray(&blockData[i * kCmdSize]);
-            } else {
-                // 空指令：MOVE(0)
-                blockData[i * kCmdSize] = 0;
-                for (int j = 1; j < kCmdSize; j++) {
-                    blockData[i * kCmdSize + j] = 0;
-                }
-            }
-        }
-
-        // 写入 TABLE
-        int tableIdx = kDataStartIndex + curGroupId * kDataBlockSize;
-        ret = driver_->setTable(tableIdx, kDataBlockSize, blockData);
-        if (!ret.ok) {
-            qDebug() << "setTable failed:" << ret.message;
-            return ret;
-        }
-
-        // 标记数据已更新
-        ret = driver_->writeModbusReg(curGroupId, kDataUpdate);
-        if (!ret.ok) {
-            qDebug() << "writeModbusReg failed:" << ret.message;
-            return ret;
-        }
-
-        loopNum++;
-        qDebug() << "sendToController loop:" << loopNum;
+    if (protocol_ == nullptr) {
+        return Result::fail(3301, "ControllerProtocol 未初始化");
     }
 
-    qDebug() << "sendToController over, total loops:" << loopNum;
+    return protocol_->sendTrajectory(points);
+}
+
+// ── 异步下发 ──────────────────────────────────────────────────────
+
+Result TrajectoryService::startSendTrajectoryAsync(const QString& filePath)
+{
+    QVector<TrajectoryPoint> points;
+    Result ret = loadPoints(filePath, points);
+    if (!ret.ok) return ret;
+
+    return startSendTrajectoryAsync(points);
+}
+
+Result TrajectoryService::startSendTrajectoryAsync(const QVector<TrajectoryPoint>& points)
+{
+    if (protocol_ == nullptr) {
+        return Result::fail(3301, "ControllerProtocol 未初始化");
+    }
+
+    if (points.isEmpty()) {
+        return Result::fail(3302, "轨迹数据为空，无法下发");
+    }
+
+    if (sending_ || sendThread_ != nullptr || sendWorker_ != nullptr) {
+        return Result::fail(3303, "当前已有轨迹正在下发");
+    }
+
+    sending_ = true;
+    emit sendingStateChanged(true);
+
+    sendThread_ = new QThread();
+    sendWorker_ = new TrajectorySendWorker(protocol_);
+
+    sendWorker_->moveToThread(sendThread_);
+
+    connect(sendThread_, &QThread::started,
+            sendWorker_, [this, points]() {
+                sendWorker_->startSend(points);
+            });
+
+    connect(sendWorker_, &TrajectorySendWorker::progressChanged,
+            this, &TrajectoryService::sendProgressChanged);
+
+    connect(sendWorker_, &TrajectorySendWorker::finished,
+            this, [this](const Result& result) {
+                emit sendFinished(result);
+
+                if (sendThread_ != nullptr) {
+                    sendThread_->quit();
+                }
+            });
+
+    connect(sendThread_, &QThread::finished,
+            sendWorker_, &QObject::deleteLater);
+
+    connect(sendThread_, &QThread::finished,
+            sendThread_, &QObject::deleteLater);
+
+    connect(sendThread_, &QThread::finished,
+            this, [this]() {
+                sendWorker_ = nullptr;
+                sendThread_ = nullptr;
+                sending_ = false;
+                emit sendingStateChanged(false);
+            });
+
+    sendThread_->start();
+
     return Result::success();
+}
+
+void TrajectoryService::cancelSendTrajectory()
+{
+    if (sendWorker_ != nullptr) {
+        QMetaObject::invokeMethod(sendWorker_,
+                                  "cancel",
+                                  Qt::QueuedConnection);
+    }
+}
+
+void TrajectoryService::cleanupSendThread()
+{
+    sendWorker_ = nullptr;
+    sendThread_ = nullptr;
+    sending_ = false;
 }

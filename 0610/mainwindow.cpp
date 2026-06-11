@@ -28,9 +28,37 @@ void MainWindow::Init()
         return;
     }
 
+    // 连接状态
     connect(ctx_->connectionService(), &ConnectionService::connectionChanged,
             this, [this](bool connected) {
                 ui->statusbar->showMessage(connected ? "已连接" : "未连接");
+            });
+
+    // 轨迹下发进度
+    connect(ctx_->trajectoryService(), &TrajectoryService::sendProgressChanged,
+            this, [this](int sentGroups, int totalGroups, int percent) {
+                ui->statusbar->showMessage(
+                    QString("轨迹下发中... %1% (%2/%3 组)")
+                        .arg(percent).arg(sentGroups).arg(totalGroups));
+            });
+
+    // 轨迹下发完成
+    connect(ctx_->trajectoryService(), &TrajectoryService::sendFinished,
+            this, [this](const Result& result) {
+                if (result.ok) {
+                    ui->statusbar->showMessage("轨迹下发完成", 5000);
+                    QMessageBox::information(this, "成功", "轨迹下发完成");
+                } else {
+                    ui->statusbar->showMessage("轨迹下发失败", 5000);
+                    QMessageBox::warning(this, "轨迹下发失败", result.message);
+                }
+            });
+
+    // 下发状态切换（控制按钮）
+    connect(ctx_->trajectoryService(), &TrajectoryService::sendingStateChanged,
+            this, [this](bool sending) {
+                ui->btn_trace_send->setEnabled(!sending);
+                ui->btn_thread_open->setEnabled(sending);
             });
 }
 
@@ -162,19 +190,28 @@ void MainWindow::motion_cmd()
 {
     if (ctx_ == nullptr) return;
 
+    if (ctx_->trajectoryService()->isSending()) {
+        QMessageBox::warning(this, "提示", "当前已有轨迹正在下发");
+        return;
+    }
+
+    if (!ctx_->driver()->isOpen()) {
+        QMessageBox::warning(this, "错误", "控制器未连接");
+        return;
+    }
+
     QString fileName = ui->ledit_data_file_name->text();
     if (fileName.isEmpty()) {
         fileName = "01";
     }
 
-    Result ret = ctx_->trajectoryService()->sendToController(fileName);
+    // 异步下发——Service 内部负责读文件 + 启动 worker 线程
+    Result ret = ctx_->trajectoryService()->startSendTrajectoryAsync(fileName);
 
     if (!ret.ok) {
-        QMessageBox::warning(this, "轨迹下发失败", ret.message);
+        QMessageBox::warning(this, "轨迹下发启动失败", ret.message);
         return;
     }
-
-    qDebug() << "Motion command over.";
 }
 
 // ======================= SLOT FUNCTION ==========================
@@ -222,13 +259,16 @@ void MainWindow::on_btn_xlsx_to_dat_clicked()
 
 void MainWindow::on_btn_thread_open_clicked()
 {
-    qDebug() << "Thread buttons removed — no longer needed.";
+    // 取消轨迹下发
+    ctx_->trajectoryService()->cancelSendTrajectory();
+    ui->btn_thread_open->setEnabled(false);
+    ui->statusbar->showMessage("正在取消轨迹下发...");
 }
 
 
 void MainWindow::on_btn_thread_close_clicked()
 {
-    qDebug() << "Thread buttons removed — no longer needed.";
+    qDebug() << "btn_thread_close clicked.";
 }
 
 
@@ -236,3 +276,63 @@ void MainWindow::on_btn_trace_to_dat_clicked()
 {
     trace_generation();
 }
+
+void MainWindow::on_btn_direct_joint_enter_clicked()
+{
+
+}
+
+
+void MainWindow::on_btn_direct_joint_exit_clicked()
+{
+
+}
+
+
+void MainWindow::on_btn_direct_joint_send_clicked()
+{
+
+}
+
+
+void MainWindow::on_btn_home_clicked()
+{
+
+}
+
+
+void MainWindow::on_btn_jog_enter_clicked()
+{
+
+}
+
+
+void MainWindow::on_btn_jog_exit_clicked()
+{
+
+}
+
+
+void MainWindow::on_btn_jog_send_clicked()
+{
+
+}
+
+
+void MainWindow::on_btn_trace_enter_clicked()
+{
+
+}
+
+
+void MainWindow::on_btn_jog_exit_2_clicked()
+{
+
+}
+
+
+void MainWindow::on_btn_trace_send_clicked()
+{
+
+}
+

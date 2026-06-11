@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <QMetaType>
 
 constexpr int kCmdSize = 7;          // [cmd, x, y, z, theta, phi, ticks]
 constexpr int kDataGroupSize = 100;  // 每个数据组中的指令条数
@@ -45,3 +46,5 @@ struct TrajectoryPoint {
         return p;
     }
 };
+
+Q_DECLARE_METATYPE(TrajectoryPoint)

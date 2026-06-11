@@ -20,7 +20,6 @@ public:
     ~MainWindow();
 
     void Init();
-
     void ip_Scan();
     void connect_Ether();
     void closeEther();

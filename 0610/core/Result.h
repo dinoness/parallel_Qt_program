@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include <QMetaType>
 
 struct Result
 {
@@ -32,3 +33,5 @@ struct Result
         return Result(false, errCode, msg);
     }
 };
+
+Q_DECLARE_METATYPE(Result)
