@@ -3,8 +3,8 @@
 #include <stdint.h>
 
 constexpr int kCmdSize = 7;          // [cmd, x, y, z, theta, phi, ticks]
-constexpr int kDataGroupSize = 100;  // 每组数据点数
-constexpr int kDataGroupNum = 10;    // 缓冲块数量
+constexpr int kDataGroupSize = 100;  // 每个数据组中的指令条数
+constexpr int kDataGroupNum = 10;    // 数据组数量
 constexpr int kDataBlockSize = kDataGroupSize * kCmdSize;
 constexpr int kDataStartIndex = 1000;
 constexpr uint16_t kDataUpdate = 1;

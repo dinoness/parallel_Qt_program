@@ -74,7 +74,7 @@ Result TrajectoryFile::readDat(const QString& fileName, QVector<TrajectoryPoint>
 
 Result TrajectoryFile::writeCsv(const QString& fileName, const QVector<TrajectoryPoint>& points)
 {
-    QString path = QString("%1/%2.csv").arg(dataDir_, fileName);
+    QString path = QString("%1%2.csv").arg(dataDir_, fileName);
 
     QFile file(path);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -104,7 +104,7 @@ Result TrajectoryFile::readCsv(const QString& fileName, QVector<TrajectoryPoint>
 {
     points.clear();
 
-    QString path = QString("%1/%2.csv").arg(dataDir_, fileName);
+    QString path = QString("%1%2.csv").arg(dataDir_, fileName);
 
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
