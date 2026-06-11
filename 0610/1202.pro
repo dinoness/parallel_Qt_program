@@ -12,16 +12,23 @@ SOURCES += \
     app/AppContext.cpp \
     main.cpp \
     mainwindow.cpp \
+    motion/TrajectoryFile.cpp \
+    motion/TrajectoryGenerator.cpp \
     robot_trace.cpp \
     service/ConnectionService.cpp \
+    service/TrajectoryService.cpp \
     zmotion/ZMotionDriver.cpp
 
 HEADERS += \
     app/AppContext.h \
     core/Result.h \
     mainwindow.h \
+    motion/TrajectoryTypes.h \
+    motion/TrajectoryFile.h \
+    motion/TrajectoryGenerator.h \
     robot_trace.h \
     service/ConnectionService.h \
+    service/TrajectoryService.h \
     third_party/zaux/zaux.h \
     third_party/zaux/zmotion.h \
     zmotion/ZMotionDriver.h

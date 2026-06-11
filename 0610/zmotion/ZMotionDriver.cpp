@@ -111,6 +111,45 @@ Result ZMotionDriver::ipScan(QStringList& ipList)
 }
 
 
+Result ZMotionDriver::trigger()
+{
+    QMutexLocker locker(&mutex_);
+
+    if (!opened_ || handle_ == nullptr) {
+        return Result::fail(1004, "控制器未连接，无法 Trigger");
+    }
+
+    int ret = ZAux_Trigger(handle_);
+
+    if (ret != 0) {
+        return Result::fail(ret,
+            QString("Trigger 失败，错误码=%1").arg(ret));
+    }
+
+    return Result::success();
+}
+
+
+Result ZMotionDriver::setTable(int start, int count, const float* data)
+{
+    QMutexLocker locker(&mutex_);
+
+    if (!opened_ || handle_ == nullptr) {
+        return Result::fail(1005, "控制器未连接，无法写 TABLE");
+    }
+
+    int ret = ZAux_Direct_SetTable(handle_, start, count, const_cast<float*>(data));
+
+    if (ret != 0) {
+        return Result::fail(ret,
+            QString("写 TABLE(%1, %2) 失败，错误码=%3")
+                .arg(start).arg(count).arg(ret));
+    }
+
+    return Result::success();
+}
+
+
 Result ZMotionDriver::writeModbusReg(int addr, uint16 value)
 {
     QMutexLocker locker(&mutex_);

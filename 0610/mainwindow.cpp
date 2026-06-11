@@ -255,17 +255,23 @@ void MainWindow::trace_test()
     qDebug() << "Trace test over.";
 }
 
-void MainWindow::trace_generation_test()
+void MainWindow::trace_generation()
 {
-    if(thread_flag == false)
-    {
-        qDebug() << "Threads are ont open yet.";
+    if (ctx_ == nullptr) return;
+
+    QString fileName = ui->ledit_data_file_name->text();
+    if (fileName.isEmpty()) {
+        fileName = "01";
+    }
+
+    Result ret = ctx_->trajectoryService()->generateAndSave(fileName);
+
+    if (!ret.ok) {
+        QMessageBox::warning(this, "生成失败", ret.message);
         return;
     }
 
-    emit s_trace_to_dat_test(ui->ledit_data_file_name->text());
-    qDebug() << "Trace generation over.";
-    qDebug() << "File is in trace_data folder.";
+    qDebug() << "Trace generation over. File is in trace_data folder.";
 }
 
 void MainWindow::trace_read_test()
@@ -275,26 +281,40 @@ void MainWindow::trace_read_test()
 
 void MainWindow::dat_to_xlsx()
 {
-    if(thread_flag == false)
-    {
-        qDebug() << "Threads are ont open yet.";
+    if (ctx_ == nullptr) return;
+
+    QString datFile = ui->ledit_data_file_name->text();
+    QString csvFile = ui->ledit_xlsx_file_name->text();
+    if (datFile.isEmpty()) datFile = "01";
+    if (csvFile.isEmpty()) csvFile = datFile;
+
+    Result ret = ctx_->trajectoryService()->datToCsv(datFile, csvFile);
+
+    if (!ret.ok) {
+        QMessageBox::warning(this, "导出失败", ret.message);
         return;
     }
 
-    emit s_dat_to_xlsx(ui->ledit_data_file_name->text(), ui->ledit_xlsx_file_name->text());
-    qDebug() << "dat_to_xlsx over";
+    qDebug() << "dat_to_csv over";
 }
 
 void MainWindow::xlsx_to_dat()
 {
-    if(thread_flag == false)
-    {
-        qDebug() << "Threads are ont open yet.";
+    if (ctx_ == nullptr) return;
+
+    QString csvFile = ui->ledit_xlsx_file_name->text();
+    QString datFile = ui->ledit_data_file_name->text();
+    if (csvFile.isEmpty()) csvFile = "01";
+    if (datFile.isEmpty()) datFile = csvFile;
+
+    Result ret = ctx_->trajectoryService()->csvToDat(csvFile, datFile);
+
+    if (!ret.ok) {
+        QMessageBox::warning(this, "导入失败", ret.message);
         return;
     }
 
-    emit s_xlsx_to_dat(ui->ledit_data_file_name->text(), ui->ledit_xlsx_file_name->text());
-    qDebug() << "xlsx_to_dat over";
+    qDebug() << "csv_to_dat over";
 }
 
 void MainWindow::commandCheckHandler(const char *command, int ret)
@@ -309,7 +329,20 @@ void MainWindow::commandCheckHandler(const char *command, int ret)
 
 void MainWindow::motion_cmd()
 {
-    emit s_trace_to_controller(g_handle, ui->ledit_data_file_name->text());
+    if (ctx_ == nullptr) return;
+
+    QString fileName = ui->ledit_data_file_name->text();
+    if (fileName.isEmpty()) {
+        fileName = "01";
+    }
+
+    Result ret = ctx_->trajectoryService()->sendToController(fileName);
+
+    if (!ret.ok) {
+        QMessageBox::warning(this, "轨迹下发失败", ret.message);
+        return;
+    }
+
     qDebug() << "Motion command over.";
 }
 
@@ -371,6 +404,6 @@ void MainWindow::on_btn_thread_close_clicked()
 
 void MainWindow::on_btn_trace_to_dat_clicked()
 {
-    trace_generation_test();
+    trace_generation();
 }
 

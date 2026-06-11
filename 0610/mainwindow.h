@@ -48,7 +48,7 @@ public:
 
     // 轨迹输入测试
     void trace_test();
-    void trace_generation_test();
+    void trace_generation();
     void trace_read_test();
     void dat_to_xlsx();
     void xlsx_to_dat();

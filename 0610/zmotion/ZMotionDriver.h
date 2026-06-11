@@ -29,6 +29,8 @@ public:
 
     // 后续扩展：寄存器、TABLE、在线命令等
     Result ipScan(QStringList& ipList);
+    Result trigger();
+    Result setTable(int start, int count, const float* data);
     Result writeModbusReg(int addr, uint16 value);
     Result readModbusReg(int addr, uint16& value);
 
