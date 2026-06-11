@@ -6,8 +6,8 @@
 
 #include "../core/Result.h"
 #include "../motion/TrajectoryTypes.h"
-#include "../protocol/ControllerProtocol.h"
 #include "../protocol/TableBufferWriter.h"
+#include "../protocol/TraceProtocol.h"
 
 /// @brief 轨迹下发后台 Worker — 运行在独立 QThread 中
 ///
@@ -18,7 +18,7 @@ class TrajectorySendWorker : public QObject
     Q_OBJECT
 
 public:
-    explicit TrajectorySendWorker(ControllerProtocol* protocol,
+    explicit TrajectorySendWorker(TraceProtocol* protocol,
                                   QObject* parent = nullptr);
 
 public slots:
@@ -30,6 +30,6 @@ signals:
     void finished(Result result);
 
 private:
-    ControllerProtocol* protocol_ = nullptr;
+    TraceProtocol* protocol_ = nullptr;
     std::atomic_bool cancelRequested_;
 };

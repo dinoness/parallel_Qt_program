@@ -16,14 +16,18 @@ SOURCES += \
     motion/TrajectoryGenerator.cpp \
     protocol/CommandWriter.cpp \
     protocol/ControllerProtocol.cpp \
+    protocol/JointProtocol.cpp \
     protocol/TableBufferWriter.cpp \
+    protocol/TraceProtocol.cpp \
     service/ConnectionService.cpp \
+    service/MotionService.cpp \
     service/TrajectoryService.cpp \
     worker/TrajectorySendWorker.cpp \
     zmotion/ZMotionDriver.cpp
 
 HEADERS += \
     app/AppContext.h \
+    core/ProtocolConstants.h \
     core/Result.h \
     mainwindow.h \
     motion/TrajectoryTypes.h \
@@ -31,8 +35,11 @@ HEADERS += \
     motion/TrajectoryGenerator.h \
     protocol/CommandWriter.h \
     protocol/ControllerProtocol.h \
+    protocol/JointProtocol.h \
     protocol/TableBufferWriter.h \
+    protocol/TraceProtocol.h \
     service/ConnectionService.h \
+    service/MotionService.h \
     service/TrajectoryService.h \
     third_party/zaux/zaux.h \
     third_party/zaux/zmotion.h \

@@ -36,7 +36,7 @@ void MainWindow::Init()
     ui->btn_thread_open->setEnabled(false);
     ui->btn_thread_close->setEnabled(false);
     ui->btn_trace_send->setEnabled(false);
-    ui->btn_jog_exit_2->setEnabled(false);
+    ui->btn_trace_exit->setEnabled(false);
 
     // ── 输入框默认值 ──────────────────────────────────
     ui->ledit_d_j1->setText("0");
@@ -117,6 +117,21 @@ bool MainWindow::canEnterMode(MotionMode mode)
 
 void MainWindow::enterMode(MotionMode mode)
 {
+    // ── 下发进入事件 ──────────────────────────────────
+    if (mode == MotionMode::DirectJoint) {
+        Result ret = ctx_->motionService()->enterJointMode();
+        if (!ret.ok) {
+            QMessageBox::warning(this, "错误", "进入 Joint 模式失败: " + ret.message);
+            return;
+        }
+    } else if (mode == MotionMode::Trace) {
+        Result ret = ctx_->motionService()->enterTraceMode();
+        if (!ret.ok) {
+            QMessageBox::warning(this, "错误", "进入 Trace 模式失败: " + ret.message);
+            return;
+        }
+    }
+
     currentMotionMode_ = mode;
     updateMotionModeDisplay();
 
@@ -130,7 +145,7 @@ void MainWindow::enterMode(MotionMode mode)
     ui->btn_jog_send->setEnabled(mode == MotionMode::CartJog);
 
     ui->btn_trace_enter->setEnabled(false);
-    ui->btn_jog_exit_2->setEnabled(mode == MotionMode::Trace);
+    ui->btn_trace_exit->setEnabled(mode == MotionMode::Trace);
 
     if (mode == MotionMode::Trace) {
         updateTraceButtonStates();
@@ -141,6 +156,11 @@ void MainWindow::exitCurrentMode()
 {
     if (currentMotionMode_ == MotionMode::Trace && traceThreadOpened_) {
         closeTraceThread();
+    }
+
+    // ── 下发退出事件 ──────────────────────────────────
+    if (currentMotionMode_ == MotionMode::DirectJoint) {
+        ctx_->motionService()->exitJointMode();
     }
 
     currentMotionMode_ = MotionMode::None;
@@ -157,7 +177,7 @@ void MainWindow::exitCurrentMode()
     ui->btn_jog_send->setEnabled(false);
 
     ui->btn_trace_enter->setEnabled(true);
-    ui->btn_jog_exit_2->setEnabled(false);
+    ui->btn_trace_exit->setEnabled(false);
 
     ui->btn_thread_open->setEnabled(false);
     ui->btn_thread_close->setEnabled(false);
@@ -224,21 +244,11 @@ void MainWindow::sendDirectJointCmd()
     float j5 = ui->ledit_d_j5->text().toFloat();
     int speedLevel = ui->ledit_speed_level->text().toInt();
 
-    // TODO: 调用 MotionService::sendDirectJoint({j1,j2,j3,j4,j5}, speedLevel)
-    // MotionService 内部将关节值写入 MODBUS 寄存器 [地址待定]，
-    // 速度等级写入 [地址待定]，然后通过 CommandWriter::sendEvent() 下发运动触发事件
-    // 事件 ID 待定 (如 EventId::DirectJoint = 0x21)
-    //
-    // 参考实现:
-    //   // 写关节值到连续 MODBUS 寄存器
-    //   float joints[5] = {j1, j2, j3, j4, j5};
-    //   for (int i = 0; i < 5; ++i) {
-    //       ctx_->driver()->writeModbusReg(JOINT_BASE_ADDR + i, encodeFloat(joints[i]));
-    //   }
-    //   // 写速度等级
-    //   ctx_->driver()->writeModbusReg(SPEED_LEVEL_ADDR, speedLevel);
-    //   // 触发运动
-    //   ctx_->driver()->writeModbusReg(Reg::EVENT_NORMAL, EventId::DirectJoint);
+    Result ret = ctx_->motionService()->sendDirectJoint(j1, j2, j3, j4, j5, speedLevel);
+    if (!ret.ok) {
+        QMessageBox::warning(this, "下发失败", ret.message);
+        return;
+    }
 
     ui->statusbar->showMessage(
         QString("Direct Joint: J1=%1 J2=%2 J3=%3 J4=%4 J5=%5 Speed=%6")
@@ -590,12 +600,20 @@ void MainWindow::on_btn_trace_enter_clicked()
 }
 
 
-void MainWindow::on_btn_jog_exit_2_clicked()
+void MainWindow::on_btn_trace_exit_clicked()
 {
     if (currentMotionMode_ != MotionMode::Trace) {
         QMessageBox::warning(this, "错误", "当前不在 Trace 模式");
         return;
     }
+
+    // 检查控制器是否正在运行轨迹
+    Result ret = ctx_->motionService()->canExitTraceMode();
+    if (!ret.ok) {
+        QMessageBox::warning(this, "无法退出", ret.message);
+        return;
+    }
+
     exitCurrentMode();
     ui->statusbar->showMessage("退出 Trace 模式");
 }
@@ -684,3 +702,4 @@ void MainWindow::on_btn_trace_to_dat_clicked()
 {
     trace_generation();
 }
+

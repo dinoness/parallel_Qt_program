@@ -2,7 +2,7 @@
 
 #include <QtGlobal>
 
-TrajectorySendWorker::TrajectorySendWorker(ControllerProtocol* protocol,
+TrajectorySendWorker::TrajectorySendWorker(TraceProtocol* protocol,
                                            QObject* parent)
     : QObject(parent),
       protocol_(protocol),
@@ -20,7 +20,7 @@ void TrajectorySendWorker::startSend(QVector<TrajectoryPoint> points)
     cancelRequested_.store(false);
 
     if (protocol_ == nullptr) {
-        emit finished(Result::fail(3201, "ControllerProtocol 未初始化"));
+        emit finished(Result::fail(3201, "TraceProtocol 未初始化"));
         return;
     }
 

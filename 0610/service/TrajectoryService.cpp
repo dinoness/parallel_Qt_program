@@ -6,7 +6,7 @@
 #include "../motion/TrajectoryGenerator.h"
 
 TrajectoryService::TrajectoryService(ZMotionDriver* driver,
-                                     ControllerProtocol* protocol,
+                                     TraceProtocol* protocol,
                                      const QString& dataDir,
                                      QObject* parent)
     : QObject(parent),
@@ -89,7 +89,7 @@ Result TrajectoryService::sendToControllerSync(const QString& fileName)
     qDebug() << "sendToControllerSync: read" << points.size() << "points";
 
     if (protocol_ == nullptr) {
-        return Result::fail(3301, "ControllerProtocol 未初始化");
+        return Result::fail(3301, "TraceProtocol 未初始化");
     }
 
     return protocol_->sendTrajectory(points);
@@ -109,7 +109,7 @@ Result TrajectoryService::startSendTrajectoryAsync(const QString& filePath)
 Result TrajectoryService::startSendTrajectoryAsync(const QVector<TrajectoryPoint>& points)
 {
     if (protocol_ == nullptr) {
-        return Result::fail(3301, "ControllerProtocol 未初始化");
+        return Result::fail(3301, "TraceProtocol 未初始化");
     }
 
     if (points.isEmpty()) {

@@ -57,7 +57,7 @@ private slots:
 
     // Trace
     void on_btn_trace_enter_clicked();
-    void on_btn_jog_exit_2_clicked();
+    void on_btn_trace_exit_clicked();
     void on_btn_thread_open_clicked();
     void on_btn_thread_close_clicked();
     void on_btn_trace_send_clicked();
@@ -68,6 +68,8 @@ private slots:
     void on_btn_trace_to_xlsx_clicked();
     void on_btn_xlsx_to_dat_clicked();
     void on_btn_trace_to_dat_clicked();
+
+
 
 private:
     // ── 模式切换 ──────────────────────────────────────

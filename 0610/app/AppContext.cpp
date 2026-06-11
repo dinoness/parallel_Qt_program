@@ -3,8 +3,10 @@
 AppContext::AppContext()
     : driver_(),
       protocol_(&driver_),
+      traceProtocol_(&driver_),
       connectionService_(&driver_),
-      trajectoryService_(&driver_, &protocol_, "../../trace_data/")
+      motionService_(&driver_, &traceProtocol_),
+      trajectoryService_(&driver_, &traceProtocol_, "../../trace_data/")
 {
 }
 
@@ -18,9 +20,19 @@ ControllerProtocol* AppContext::protocol()
     return &protocol_;
 }
 
+TraceProtocol* AppContext::traceProtocol()
+{
+    return &traceProtocol_;
+}
+
 ConnectionService* AppContext::connectionService()
 {
     return &connectionService_;
+}
+
+MotionService* AppContext::motionService()
+{
+    return &motionService_;
 }
 
 TrajectoryService* AppContext::trajectoryService()

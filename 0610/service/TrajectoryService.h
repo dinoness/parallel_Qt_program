@@ -8,7 +8,7 @@
 #include "../core/Result.h"
 #include "../motion/TrajectoryFile.h"
 #include "../motion/TrajectoryTypes.h"
-#include "../protocol/ControllerProtocol.h"
+#include "../protocol/TraceProtocol.h"
 #include "../zmotion/ZMotionDriver.h"
 #include "../worker/TrajectorySendWorker.h"
 
@@ -18,7 +18,7 @@ class TrajectoryService : public QObject
 
 public:
     explicit TrajectoryService(ZMotionDriver* driver,
-                               ControllerProtocol* protocol,
+                               TraceProtocol* protocol,
                                const QString& dataDir,
                                QObject* parent = nullptr);
     ~TrajectoryService();
@@ -47,7 +47,7 @@ private:
     void cleanupSendThread();
 
     ZMotionDriver*      driver_   = nullptr;
-    ControllerProtocol*  protocol_ = nullptr;
+    TraceProtocol*      protocol_ = nullptr;
     TrajectoryFile      file_;
 
     QThread*             sendThread_ = nullptr;

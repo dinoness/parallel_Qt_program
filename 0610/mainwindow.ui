@@ -648,7 +648,7 @@
      <string>ENTER</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="btn_jog_exit_2">
+   <widget class="QPushButton" name="btn_trace_exit">
     <property name="geometry">
      <rect>
       <x>570</x>
