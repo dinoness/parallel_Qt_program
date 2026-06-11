@@ -10,6 +10,7 @@
 #define CmdSize 7  // 每组数据大小，[指令代码,x,y,z,theta,phi,ticks(time = ticks * servo_period)]
 #define DataGroupNum 10  // 数据块缓冲的块数
 #define DataBlockSize  DataGroupSize*CmdSize  // 每次发送的数据总数
+#define LENGTH_UNIT 1
 
 // command mapping
 //  1 MOVE走直线
@@ -17,7 +18,7 @@
 // 10 MOVE_PTABS单位时间距离绝对
 
 // 伺服周期 = 1ms
-// 运动速度 = 运动长度(um)/（ticks * 伺服周期）
+// 运动速度(mm/s) = 运动长度(um)/(ticks * 伺服周期(ms))
 // 规定长度的单位为um
 
 robot_trace::robot_trace()
@@ -136,8 +137,8 @@ bool robot_trace::trace_to_dat_test(const QString& cus_file_name)
     // 5轴回零后的坐标记为[0 0 -555*1000 0 0]
     // ================= 5 axis,screw =================
     float n_ticks = 50;
-    float z_height = -600 * 1000;
-    float R0 = 30 * 1000;
+    float z_height = -650 * LENGTH_UNIT;
+    float R0 = 30 * LENGTH_UNIT;
 
     u_data[0] = 2;
     u_data[1] = 0;  // um
@@ -221,8 +222,8 @@ bool robot_trace::trace_to_controller(ZMC_HANDLE g_handle, const QString& cus_fi
         do
         {
             ZAux_Modbus_Get4x(g_handle, cur_group_id, 1, &data_state);
-            qDebug() << "cur_group_id = " << cur_group_id;
-            qDebug() << "data_state = " << data_state;
+            // qDebug() << "cur_group_id = " << cur_group_id;
+            // qDebug() << "data_state = " << data_state;
 
             // 可加一个关闭线程的变量
             // 是否连接控制器，需要判定
@@ -230,7 +231,7 @@ bool robot_trace::trace_to_controller(ZMC_HANDLE g_handle, const QString& cus_fi
         }while(!(data_state != F_DataUpdate));
 
         //数据获取
-        if (!data_file.seek(cur_group_id * block_size_bytes))
+        if (!data_file.seek(loop_num * block_size_bytes))
         {
             return false;
         }
