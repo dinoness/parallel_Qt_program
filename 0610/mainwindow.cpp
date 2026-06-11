@@ -28,13 +28,38 @@ void MainWindow::Init()
         return;
     }
 
-    // 连接状态
+    // ── 初始按钮状态 ──────────────────────────────────
+    ui->btn_direct_joint_send->setEnabled(false);
+    ui->btn_direct_joint_exit->setEnabled(false);
+    ui->btn_jog_send->setEnabled(false);
+    ui->btn_jog_exit->setEnabled(false);
+    ui->btn_thread_open->setEnabled(false);
+    ui->btn_thread_close->setEnabled(false);
+    ui->btn_trace_send->setEnabled(false);
+    ui->btn_jog_exit_2->setEnabled(false);
+
+    // ── 输入框默认值 ──────────────────────────────────
+    ui->ledit_d_j1->setText("0");
+    ui->ledit_d_j2->setText("0");
+    ui->ledit_d_j3->setText("0");
+    ui->ledit_d_j4->setText("0");
+    ui->ledit_d_j5->setText("0");
+    ui->ledit_jog_x->setText("0");
+    ui->ledit_jog_y->setText("0");
+    ui->ledit_jog_z->setText("0");
+    ui->ledit_jog_phi->setText("0");
+    ui->ledit_jog_theta->setText("0");
+    ui->ledit_speed_level->setText("0");
+
+    updateMotionModeDisplay();
+
+    // ── 连接状态 ──────────────────────────────────────
     connect(ctx_->connectionService(), &ConnectionService::connectionChanged,
             this, [this](bool connected) {
                 ui->statusbar->showMessage(connected ? "已连接" : "未连接");
             });
 
-    // 轨迹下发进度
+    // ── 轨迹下发进度 ──────────────────────────────────
     connect(ctx_->trajectoryService(), &TrajectoryService::sendProgressChanged,
             this, [this](int sentGroups, int totalGroups, int percent) {
                 ui->statusbar->showMessage(
@@ -42,7 +67,7 @@ void MainWindow::Init()
                         .arg(percent).arg(sentGroups).arg(totalGroups));
             });
 
-    // 轨迹下发完成
+    // ── 轨迹下发完成 ──────────────────────────────────
     connect(ctx_->trajectoryService(), &TrajectoryService::sendFinished,
             this, [this](const Result& result) {
                 if (result.ok) {
@@ -54,14 +79,268 @@ void MainWindow::Init()
                 }
             });
 
-    // 下发状态切换（控制按钮）
+    // ── 下发状态切换 ──────────────────────────────────
     connect(ctx_->trajectoryService(), &TrajectoryService::sendingStateChanged,
             this, [this](bool sending) {
-                ui->btn_trace_send->setEnabled(!sending);
-                ui->btn_thread_open->setEnabled(sending);
+                if (sending) {
+                    // 发送中: Thread Open 充当 Cancel
+                    ui->btn_thread_open->setEnabled(true);
+                    ui->btn_trace_send->setEnabled(false);
+                    ui->btn_thread_close->setEnabled(false);
+                } else {
+                    // 发送结束: 恢复 Trace 模式按钮状态
+                    updateTraceButtonStates();
+                }
             });
 }
 
+// ===================================================================
+// 模式管理
+// ===================================================================
+
+bool MainWindow::canEnterMode(MotionMode mode)
+{
+    if (currentMotionMode_ == mode) {
+        QMessageBox::information(this, "提示", "已在当前模式中");
+        return false;
+    }
+    if (currentMotionMode_ != MotionMode::None) {
+        QMessageBox::warning(this, "提示", "请先退出当前运动模式");
+        return false;
+    }
+    if (!ctx_->driver()->isOpen()) {
+        QMessageBox::warning(this, "错误", "控制器未连接");
+        return false;
+    }
+    return true;
+}
+
+void MainWindow::enterMode(MotionMode mode)
+{
+    currentMotionMode_ = mode;
+    updateMotionModeDisplay();
+
+    // 禁用所有 ENTER，启用对应模式的 EXIT
+    ui->btn_direct_joint_enter->setEnabled(false);
+    ui->btn_direct_joint_exit->setEnabled(mode == MotionMode::DirectJoint);
+    ui->btn_direct_joint_send->setEnabled(mode == MotionMode::DirectJoint);
+
+    ui->btn_jog_enter->setEnabled(false);
+    ui->btn_jog_exit->setEnabled(mode == MotionMode::CartJog);
+    ui->btn_jog_send->setEnabled(mode == MotionMode::CartJog);
+
+    ui->btn_trace_enter->setEnabled(false);
+    ui->btn_jog_exit_2->setEnabled(mode == MotionMode::Trace);
+
+    if (mode == MotionMode::Trace) {
+        updateTraceButtonStates();
+    }
+}
+
+void MainWindow::exitCurrentMode()
+{
+    if (currentMotionMode_ == MotionMode::Trace && traceThreadOpened_) {
+        closeTraceThread();
+    }
+
+    currentMotionMode_ = MotionMode::None;
+    traceThreadOpened_ = false;
+    updateMotionModeDisplay();
+
+    // 恢复 ENTER，禁用所有 EXIT/SEND
+    ui->btn_direct_joint_enter->setEnabled(true);
+    ui->btn_direct_joint_exit->setEnabled(false);
+    ui->btn_direct_joint_send->setEnabled(false);
+
+    ui->btn_jog_enter->setEnabled(true);
+    ui->btn_jog_exit->setEnabled(false);
+    ui->btn_jog_send->setEnabled(false);
+
+    ui->btn_trace_enter->setEnabled(true);
+    ui->btn_jog_exit_2->setEnabled(false);
+
+    ui->btn_thread_open->setEnabled(false);
+    ui->btn_thread_close->setEnabled(false);
+    ui->btn_trace_send->setEnabled(false);
+}
+
+void MainWindow::updateMotionModeDisplay()
+{
+    switch (currentMotionMode_) {
+    case MotionMode::None:        ui->label_motion_mode->setText("None");        break;
+    case MotionMode::DirectJoint: ui->label_motion_mode->setText("Direct Joint"); break;
+    case MotionMode::CartJog:     ui->label_motion_mode->setText("Cart Jog");     break;
+    case MotionMode::Trace:       ui->label_motion_mode->setText("Trace");       break;
+    }
+}
+
+void MainWindow::updateTraceButtonStates()
+{
+    bool inTrace = (currentMotionMode_ == MotionMode::Trace);
+    bool sending = ctx_->trajectoryService()->isSending();
+
+    if (!inTrace || sending) {
+        ui->btn_thread_open->setEnabled(sending);
+        ui->btn_thread_close->setEnabled(false);
+        ui->btn_trace_send->setEnabled(false);
+        return;
+    }
+
+    // Trace 模式，非发送状态
+    ui->btn_thread_open->setEnabled(!traceThreadOpened_);
+    ui->btn_thread_close->setEnabled(traceThreadOpened_);
+    ui->btn_trace_send->setEnabled(traceThreadOpened_);
+}
+
+// ===================================================================
+// Home
+// ===================================================================
+
+void MainWindow::sendHomeCmd()
+{
+    // TODO: 调用 MotionService::sendHome()
+    // MotionService 内部通过 CommandWriter::sendEvent() 向控制器下发回零事件
+    // 事件 ID 待定 (如 EventId::Home = 0x20)
+    // ctx_->motionService()->sendHome();
+    //
+    // 参考实现:
+    //   ctx_->driver()->writeModbusReg(Reg::EVENT_NORMAL, EventId::Home);
+
+    ui->statusbar->showMessage("回零指令已下发", 3000);
+    ui->label_home_state->setText("Yes");
+    qDebug() << "Home command sent.";
+}
+
+// ===================================================================
+// Direct Joint
+// ===================================================================
+
+void MainWindow::sendDirectJointCmd()
+{
+    float j1 = ui->ledit_d_j1->text().toFloat();
+    float j2 = ui->ledit_d_j2->text().toFloat();
+    float j3 = ui->ledit_d_j3->text().toFloat();
+    float j4 = ui->ledit_d_j4->text().toFloat();
+    float j5 = ui->ledit_d_j5->text().toFloat();
+    int speedLevel = ui->ledit_speed_level->text().toInt();
+
+    // TODO: 调用 MotionService::sendDirectJoint({j1,j2,j3,j4,j5}, speedLevel)
+    // MotionService 内部将关节值写入 MODBUS 寄存器 [地址待定]，
+    // 速度等级写入 [地址待定]，然后通过 CommandWriter::sendEvent() 下发运动触发事件
+    // 事件 ID 待定 (如 EventId::DirectJoint = 0x21)
+    //
+    // 参考实现:
+    //   // 写关节值到连续 MODBUS 寄存器
+    //   float joints[5] = {j1, j2, j3, j4, j5};
+    //   for (int i = 0; i < 5; ++i) {
+    //       ctx_->driver()->writeModbusReg(JOINT_BASE_ADDR + i, encodeFloat(joints[i]));
+    //   }
+    //   // 写速度等级
+    //   ctx_->driver()->writeModbusReg(SPEED_LEVEL_ADDR, speedLevel);
+    //   // 触发运动
+    //   ctx_->driver()->writeModbusReg(Reg::EVENT_NORMAL, EventId::DirectJoint);
+
+    ui->statusbar->showMessage(
+        QString("Direct Joint: J1=%1 J2=%2 J3=%3 J4=%4 J5=%5 Speed=%6")
+            .arg(j1).arg(j2).arg(j3).arg(j4).arg(j5).arg(speedLevel), 3000);
+    qDebug() << "Direct Joint command sent.";
+}
+
+// ===================================================================
+// Cart Jog
+// ===================================================================
+
+void MainWindow::sendCartJogCmd()
+{
+    float x = ui->ledit_jog_x->text().toFloat();
+    float y = ui->ledit_jog_y->text().toFloat();
+    float z = ui->ledit_jog_z->text().toFloat();
+    float phi = ui->ledit_jog_phi->text().toFloat();
+    float theta = ui->ledit_jog_theta->text().toFloat();
+    int speedLevel = ui->ledit_speed_level->text().toInt();
+
+    // TODO: 调用 MotionService::sendCartJog({x,y,z,phi,theta}, speedLevel)
+    // MotionService 内部将笛卡尔运动量写入 MODBUS 寄存器 [地址待定]，
+    // 速度等级写入 [地址待定]，然后通过 CommandWriter::sendEvent() 下发运动触发事件
+    // 事件 ID 待定 (如 EventId::CartJog = 0x22)
+    //
+    // 参考实现:
+    //   float values[5] = {x, y, z, phi, theta};
+    //   for (int i = 0; i < 5; ++i) {
+    //       ctx_->driver()->writeModbusReg(JOG_BASE_ADDR + i, encodeFloat(values[i]));
+    //   }
+    //   ctx_->driver()->writeModbusReg(SPEED_LEVEL_ADDR, speedLevel);
+    //   ctx_->driver()->writeModbusReg(Reg::EVENT_NORMAL, EventId::CartJog);
+
+    ui->statusbar->showMessage(
+        QString("Cart Jog: X=%1 Y=%2 Z=%3 Phi=%4 Theta=%5 Speed=%6")
+            .arg(x).arg(y).arg(z).arg(phi).arg(theta).arg(speedLevel), 3000);
+    qDebug() << "Cart Jog command sent.";
+}
+
+// ===================================================================
+// Trace
+// ===================================================================
+
+void MainWindow::openTraceThread()
+{
+    if (!ctx_->driver()->isOpen()) {
+        QMessageBox::warning(this, "错误", "控制器未连接");
+        return;
+    }
+
+    // TODO: 调用 MotionService / TrajectoryService 的线程准备接口
+    // 当前 TrajectoryService::startSendTrajectoryAsync() 内部自行管理线程生命周期，
+    // Thread Open 作为预备状态，使能 SEND 按钮
+    traceThreadOpened_ = true;
+    updateTraceButtonStates();
+    ui->statusbar->showMessage("Trace 线程已开启");
+    qDebug() << "Trace thread opened.";
+}
+
+void MainWindow::closeTraceThread()
+{
+    // 如果正在下发，先取消
+    if (ctx_->trajectoryService()->isSending()) {
+        ctx_->trajectoryService()->cancelSendTrajectory();
+    }
+
+    traceThreadOpened_ = false;
+    updateTraceButtonStates();
+    ui->statusbar->showMessage("Trace 线程已关闭");
+    qDebug() << "Trace thread closed.";
+}
+
+void MainWindow::sendTraceFile()
+{
+    if (ctx_->trajectoryService()->isSending()) {
+        QMessageBox::warning(this, "提示", "当前已有轨迹正在下发");
+        return;
+    }
+
+    if (!ctx_->driver()->isOpen()) {
+        QMessageBox::warning(this, "错误", "控制器未连接");
+        return;
+    }
+
+    QString fileName = ui->ledit_data_file_name->text();
+    if (fileName.isEmpty()) {
+        fileName = "01";
+    }
+
+    Result ret = ctx_->trajectoryService()->startSendTrajectoryAsync(fileName);
+
+    if (!ret.ok) {
+        QMessageBox::warning(this, "轨迹下发启动失败", ret.message);
+        return;
+    }
+
+    ui->statusbar->showMessage("轨迹下发已启动...");
+}
+
+// ===================================================================
+// Connection
+// ===================================================================
 
 void MainWindow::ip_Scan()
 {
@@ -123,6 +402,9 @@ void MainWindow::closeEther()
     QMessageBox::information(this, "已断开", "控制器连接已断开");
 }
 
+// ===================================================================
+// Data
+// ===================================================================
 
 void MainWindow::trace_generation()
 {
@@ -153,7 +435,7 @@ void MainWindow::dat_to_xlsx()
     if (ctx_ == nullptr) return;
 
     QString datFile = ui->ledit_data_file_name->text();
-    QString csvFile = ui->ledit_xlsx_file_name->text();
+    QString csvFile = ui->ledit_csv_file_name->text();
     if (datFile.isEmpty()) datFile = "01";
     if (csvFile.isEmpty()) csvFile = datFile;
 
@@ -171,7 +453,7 @@ void MainWindow::xlsx_to_dat()
 {
     if (ctx_ == nullptr) return;
 
-    QString csvFile = ui->ledit_xlsx_file_name->text();
+    QString csvFile = ui->ledit_csv_file_name->text();
     QString datFile = ui->ledit_data_file_name->text();
     if (csvFile.isEmpty()) csvFile = "01";
     if (datFile.isEmpty()) datFile = csvFile;
@@ -205,7 +487,6 @@ void MainWindow::motion_cmd()
         fileName = "01";
     }
 
-    // 异步下发——Service 内部负责读文件 + 启动 worker 线程
     Result ret = ctx_->trajectoryService()->startSendTrajectoryAsync(fileName);
 
     if (!ret.ok) {
@@ -214,7 +495,11 @@ void MainWindow::motion_cmd()
     }
 }
 
-// ======================= SLOT FUNCTION ==========================
+// ===================================================================
+// SLOT FUNCTIONS
+// ===================================================================
+
+// ── Connection ────────────────────────────────────────
 
 void MainWindow::on_btn_ip_scan_clicked()
 {
@@ -232,6 +517,144 @@ void MainWindow::on_btn_disconnect_controller_clicked()
     closeEther();
 }
 
+// ── Home ──────────────────────────────────────────────
+
+void MainWindow::on_btn_home_clicked()
+{
+    if (!ctx_->driver()->isOpen()) {
+        QMessageBox::warning(this, "错误", "控制器未连接");
+        return;
+    }
+    sendHomeCmd();
+}
+
+// ── Direct Joint ──────────────────────────────────────
+
+void MainWindow::on_btn_direct_joint_enter_clicked()
+{
+    if (!canEnterMode(MotionMode::DirectJoint)) return;
+    enterMode(MotionMode::DirectJoint);
+    ui->statusbar->showMessage("进入 Direct Joint 模式");
+}
+
+
+void MainWindow::on_btn_direct_joint_exit_clicked()
+{
+    exitCurrentMode();
+    ui->statusbar->showMessage("退出 Direct Joint 模式");
+}
+
+
+void MainWindow::on_btn_direct_joint_send_clicked()
+{
+    if (currentMotionMode_ != MotionMode::DirectJoint) {
+        QMessageBox::warning(this, "错误", "请先进入 Direct Joint 模式");
+        return;
+    }
+    sendDirectJointCmd();
+}
+
+// ── Cart Jog ──────────────────────────────────────────
+
+void MainWindow::on_btn_jog_enter_clicked()
+{
+    if (!canEnterMode(MotionMode::CartJog)) return;
+    enterMode(MotionMode::CartJog);
+    ui->statusbar->showMessage("进入 Cart Jog 模式");
+}
+
+
+void MainWindow::on_btn_jog_exit_clicked()
+{
+    exitCurrentMode();
+    ui->statusbar->showMessage("退出 Cart Jog 模式");
+}
+
+
+void MainWindow::on_btn_jog_send_clicked()
+{
+    if (currentMotionMode_ != MotionMode::CartJog) {
+        QMessageBox::warning(this, "错误", "请先进入 Cart Jog 模式");
+        return;
+    }
+    sendCartJogCmd();
+}
+
+// ── Trace ─────────────────────────────────────────────
+
+void MainWindow::on_btn_trace_enter_clicked()
+{
+    if (!canEnterMode(MotionMode::Trace)) return;
+    enterMode(MotionMode::Trace);
+    ui->statusbar->showMessage("进入 Trace 模式，请点击 Thread Open 开启线程");
+}
+
+
+void MainWindow::on_btn_jog_exit_2_clicked()
+{
+    if (currentMotionMode_ != MotionMode::Trace) {
+        QMessageBox::warning(this, "错误", "当前不在 Trace 模式");
+        return;
+    }
+    exitCurrentMode();
+    ui->statusbar->showMessage("退出 Trace 模式");
+}
+
+
+void MainWindow::on_btn_thread_open_clicked()
+{
+    // 发送中 → 取消下发
+    if (ctx_->trajectoryService()->isSending()) {
+        ctx_->trajectoryService()->cancelSendTrajectory();
+        ui->btn_thread_open->setEnabled(false);
+        ui->statusbar->showMessage("正在取消轨迹下发...");
+        return;
+    }
+
+    // Trace 模式 → 开启线程
+    if (currentMotionMode_ != MotionMode::Trace) {
+        QMessageBox::warning(this, "错误", "请先进入 Trace 模式");
+        return;
+    }
+
+    if (traceThreadOpened_) {
+        QMessageBox::information(this, "提示", "线程已开启");
+        return;
+    }
+
+    openTraceThread();
+}
+
+
+void MainWindow::on_btn_thread_close_clicked()
+{
+    if (currentMotionMode_ != MotionMode::Trace) return;
+
+    if (!traceThreadOpened_ && !ctx_->trajectoryService()->isSending()) {
+        QMessageBox::information(this, "提示", "线程未开启");
+        return;
+    }
+
+    closeTraceThread();
+}
+
+
+void MainWindow::on_btn_trace_send_clicked()
+{
+    if (currentMotionMode_ != MotionMode::Trace) {
+        QMessageBox::warning(this, "错误", "请先进入 Trace 模式");
+        return;
+    }
+
+    if (!traceThreadOpened_) {
+        QMessageBox::warning(this, "错误", "请先点击 Thread Open 开启线程");
+        return;
+    }
+
+    sendTraceFile();
+}
+
+// ── Data ──────────────────────────────────────────────
 
 void MainWindow::on_btn_trace_test_clicked()
 {
@@ -257,82 +680,7 @@ void MainWindow::on_btn_xlsx_to_dat_clicked()
 }
 
 
-void MainWindow::on_btn_thread_open_clicked()
-{
-    // 取消轨迹下发
-    ctx_->trajectoryService()->cancelSendTrajectory();
-    ui->btn_thread_open->setEnabled(false);
-    ui->statusbar->showMessage("正在取消轨迹下发...");
-}
-
-
-void MainWindow::on_btn_thread_close_clicked()
-{
-    qDebug() << "btn_thread_close clicked.";
-}
-
-
 void MainWindow::on_btn_trace_to_dat_clicked()
 {
     trace_generation();
 }
-
-void MainWindow::on_btn_direct_joint_enter_clicked()
-{
-
-}
-
-
-void MainWindow::on_btn_direct_joint_exit_clicked()
-{
-
-}
-
-
-void MainWindow::on_btn_direct_joint_send_clicked()
-{
-
-}
-
-
-void MainWindow::on_btn_home_clicked()
-{
-
-}
-
-
-void MainWindow::on_btn_jog_enter_clicked()
-{
-
-}
-
-
-void MainWindow::on_btn_jog_exit_clicked()
-{
-
-}
-
-
-void MainWindow::on_btn_jog_send_clicked()
-{
-
-}
-
-
-void MainWindow::on_btn_trace_enter_clicked()
-{
-
-}
-
-
-void MainWindow::on_btn_jog_exit_2_clicked()
-{
-
-}
-
-
-void MainWindow::on_btn_trace_send_clicked()
-{
-
-}
-
