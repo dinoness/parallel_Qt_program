@@ -1,4 +1,9 @@
+0610/build/
+0610/*.pro.user.*
+0610/*.pro.user
+0610/trace_data/
 1202/build/
 1202/*.pro.user.*
 1202/*.pro.user
 1202/trace_data/
+*.pdf
