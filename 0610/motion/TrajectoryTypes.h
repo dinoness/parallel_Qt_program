@@ -3,14 +3,7 @@
 #include <stdint.h>
 #include <QMetaType>
 
-constexpr int kCmdSize = 7;          // [cmd, x, y, z, theta, phi, ticks]
-constexpr int kDataGroupSize = 100;  // 每个数据组中的指令条数
-constexpr int kDataGroupNum = 10;    // 数据组数量
-constexpr int kDataBlockSize = kDataGroupSize * kCmdSize;
-constexpr int kDataStartIndex = 1000;
-constexpr uint16_t kDataUpdate = 1;
-constexpr uint16_t kDataUsed = 2;
-constexpr uint16_t kDataBlank = 3;
+#include "../core/ProtocolConstants.h"
 
 struct TrajectoryPoint {
     float cmd;

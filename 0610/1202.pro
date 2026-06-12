@@ -14,6 +14,7 @@ SOURCES += \
     mainwindow.cpp \
     motion/TrajectoryFile.cpp \
     motion/TrajectoryGenerator.cpp \
+    protocol/CartJogProtocol.cpp \
     protocol/CommandWriter.cpp \
     protocol/ControllerProtocol.cpp \
     protocol/JointProtocol.cpp \
@@ -33,6 +34,7 @@ HEADERS += \
     motion/TrajectoryTypes.h \
     motion/TrajectoryFile.h \
     motion/TrajectoryGenerator.h \
+    protocol/CartJogProtocol.h \
     protocol/CommandWriter.h \
     protocol/ControllerProtocol.h \
     protocol/JointProtocol.h \

@@ -1,9 +1,9 @@
-#include "JointProtocol.h"
+#include "CartJogProtocol.h"
 #include <QThread>
 #include <QDebug>
 #include <QElapsedTimer>
 
-JointProtocol::JointProtocol(ZMotionDriver* driver)
+CartJogProtocol::CartJogProtocol(ZMotionDriver* driver)
     : driver_(driver)
 {
 }
@@ -12,7 +12,7 @@ JointProtocol::JointProtocol(ZMotionDriver* driver)
 // 事件寄存器等待
 // ===================================================================
 
-Result JointProtocol::waitForEventReg(uint16& stuckValue)
+Result CartJogProtocol::waitForEventReg(uint16& stuckValue)
 {
     constexpr int kTimeoutMs  = 5000;
     constexpr int kIntervalMs = 1000;
@@ -33,7 +33,7 @@ Result JointProtocol::waitForEventReg(uint16& stuckValue)
         }
     }
 
-    return Result::fail(3205,
+    return Result::fail(3501,
         QString("事件寄存器 %1 忙 (值=%2)，5s 超时")
             .arg(kEventReg).arg(stuckValue));
 }
@@ -42,7 +42,7 @@ Result JointProtocol::waitForEventReg(uint16& stuckValue)
 // 槽位等待
 // ===================================================================
 
-Result JointProtocol::waitSlotReady(int slot)
+Result CartJogProtocol::waitSlotReady(int slot)
 {
     constexpr int kTimeoutMs = 10000;
 
@@ -51,7 +51,7 @@ Result JointProtocol::waitSlotReady(int slot)
 
     while (true) {
         uint16 state = 0;
-        Result ret = driver_->readModbusReg(kJointStatusBase + slot, state);
+        Result ret = driver_->readModbusReg(kCartJogStatusBase + slot, state);
         if (!ret.ok) return ret;
 
         if (state != kDataUpdate) {
@@ -59,8 +59,8 @@ Result JointProtocol::waitSlotReady(int slot)
         }
 
         if (timer.elapsed() > kTimeoutMs) {
-            return Result::fail(3210,
-                QString("等待 Joint 槽位 %1 释放超时 (当前状态=%2)")
+            return Result::fail(3510,
+                QString("等待 Cart Jog 槽位 %1 释放超时 (当前状态=%2)")
                     .arg(slot).arg(state));
         }
 
@@ -72,76 +72,76 @@ Result JointProtocol::waitSlotReady(int slot)
 // 进入 / 退出
 // ===================================================================
 
-Result JointProtocol::enterJointMode()
+Result CartJogProtocol::enterCartJogMode()
 {
     if (driver_ == nullptr) {
-        return Result::fail(3201, "ZMotionDriver 未初始化");
+        return Result::fail(3502, "ZMotionDriver 未初始化");
     }
 
     // 等待事件寄存器清零
     uint16 stuckVal = 0;
     Result waitRet = waitForEventReg(stuckVal);
     if (!waitRet.ok) {
-        qDebug() << "enterJointMode: waitForEventReg failed:" << waitRet.message;
+        qDebug() << "enterCartJogMode: waitForEventReg failed:" << waitRet.message;
         return waitRet;
     }
 
     writeIndex_ = 0;
 
     return driver_->writeModbusReg(kEventReg,
-                                   static_cast<uint16>(kEventJoint));
+                                   static_cast<uint16>(kEventCartJog));
 }
 
-Result JointProtocol::exitJointMode()
+Result CartJogProtocol::exitCartJogMode()
 {
     if (driver_ == nullptr) {
-        return Result::fail(3202, "ZMotionDriver 未初始化");
+        return Result::fail(3503, "ZMotionDriver 未初始化");
     }
 
     uint16 stuckVal = 0;
     Result waitRet = waitForEventReg(stuckVal);
     if (!waitRet.ok) {
-        qDebug() << "exitJointMode: waitForEventReg failed:" << waitRet.message;
+        qDebug() << "exitCartJogMode: waitForEventReg failed:" << waitRet.message;
         return waitRet;
     }
 
     return driver_->writeModbusReg(kEventReg,
-                                   static_cast<uint16>(kEventJointDone));
+                                   static_cast<uint16>(kEventCartJogDone));
 }
 
 // ===================================================================
 // 指令下发
 // ===================================================================
 
-Result JointProtocol::sendJointCommand(const float cmd[kJointCmdSize])
+Result CartJogProtocol::sendCartJogCommand(const float cmd[kCartJogCmdSize])
 {
     if (driver_ == nullptr) {
-        return Result::fail(3203, "ZMotionDriver 未初始化");
+        return Result::fail(3504, "ZMotionDriver 未初始化");
     }
 
     // 等待当前槽位空闲，防止覆写
     Result waitRet = waitSlotReady(writeIndex_);
     if (!waitRet.ok) return waitRet;
 
-    int tableStart = kJointTableStart + writeIndex_ * kJointCmdSize;
+    int tableStart = kCartJogTableStart + writeIndex_ * kCartJogCmdSize;
 
-    Result ret = driver_->setTable(tableStart, kJointCmdSize, cmd);
+    Result ret = driver_->setTable(tableStart, kCartJogCmdSize, cmd);
     if (!ret.ok) return ret;
 
     // 通知控制器有新指令
-    ret = driver_->writeModbusReg(kJointStatusBase + writeIndex_, kDataUpdate);
+    ret = driver_->writeModbusReg(kCartJogStatusBase + writeIndex_, kDataUpdate);
     if (!ret.ok) return ret;
 
-    writeIndex_ = (writeIndex_ + 1) % kJointBufferSize;
+    writeIndex_ = (writeIndex_ + 1) % kCartJogBufferSize;
 
     return Result::success();
 }
 
-Result JointProtocol::readJointStatus(int slot, uint16& status)
+Result CartJogProtocol::readCartJogStatus(int slot, uint16& status)
 {
     if (driver_ == nullptr) {
-        return Result::fail(3204, "ZMotionDriver 未初始化");
+        return Result::fail(3505, "ZMotionDriver 未初始化");
     }
 
-    return driver_->readModbusReg(kJointStatusBase + slot, status);
+    return driver_->readModbusReg(kCartJogStatusBase + slot, status);
 }

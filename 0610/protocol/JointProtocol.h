@@ -31,6 +31,9 @@ private:
     /// @brief 事件寄存器写入前等待 — 轮询直到寄存器为 0 或超时 (5s)
     Result waitForEventReg(uint16& stuckValue);
 
+    /// @brief 等待槽位空闲 — 轮询直到状态 ≠ kDataUpdate 或超时
+    Result waitSlotReady(int slot);
+
     ZMotionDriver* driver_;
     int writeIndex_ = 0;  // 当前写入槽位 (0~4)
 };

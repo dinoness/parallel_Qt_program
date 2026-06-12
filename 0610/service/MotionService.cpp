@@ -6,6 +6,7 @@ MotionService::MotionService(ZMotionDriver* driver,
     : QObject(parent)
     , driver_(driver)
     , jointProtocol_(driver)
+    , cartJogProtocol_(driver)
     , traceProtocol_(traceProtocol)
 {
 }
@@ -55,6 +56,54 @@ Result MotionService::sendDirectJoint(float j1, float j2, float j3,
     cmd[6] = static_cast<float>(speedLevel);
 
     return jointProtocol_.sendJointCommand(cmd);
+}
+
+// ── Cart Jog 模式 ─────────────────────────────────────
+
+Result MotionService::enterCartJogMode()
+{
+    if (driver_ == nullptr) {
+        return Result::fail(3601, "ZMotionDriver 未初始化");
+    }
+
+    if (!driver_->isOpen()) {
+        return Result::fail(3602, "控制器未连接");
+    }
+
+    return cartJogProtocol_.enterCartJogMode();
+}
+
+Result MotionService::exitCartJogMode()
+{
+    if (driver_ == nullptr) {
+        return Result::fail(3603, "ZMotionDriver 未初始化");
+    }
+
+    return cartJogProtocol_.exitCartJogMode();
+}
+
+Result MotionService::sendCartJog(int cmdId,
+                                  float x, float y, float z,
+                                  float phi, float theta, int speedLevel)
+{
+    if (driver_ == nullptr) {
+        return Result::fail(3604, "ZMotionDriver 未初始化");
+    }
+
+    if (!driver_->isOpen()) {
+        return Result::fail(3605, "控制器未连接");
+    }
+
+    float cmd[kCartJogCmdSize];
+    cmd[0] = static_cast<float>(cmdId);
+    cmd[1] = x;
+    cmd[2] = y;
+    cmd[3] = z;
+    cmd[4] = phi;
+    cmd[5] = theta;
+    cmd[6] = static_cast<float>(speedLevel);
+
+    return cartJogProtocol_.sendCartJogCommand(cmd);
 }
 
 // ── Trace 模式 ────────────────────────────────────────

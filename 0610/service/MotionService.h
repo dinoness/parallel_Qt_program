@@ -4,6 +4,7 @@
 
 #include "../core/ProtocolConstants.h"
 #include "../core/Result.h"
+#include "../protocol/CartJogProtocol.h"
 #include "../protocol/JointProtocol.h"
 #include "../protocol/TraceProtocol.h"
 #include "../zmotion/ZMotionDriver.h"
@@ -24,12 +25,19 @@ public:
     Result sendDirectJoint(float j1, float j2, float j3, float j4, float j5,
                            int speedLevel);
 
+    // ── Cart Jog 模式 ─────────────────────────────────
+    Result enterCartJogMode();
+    Result exitCartJogMode();
+    Result sendCartJog(int cmdId, float x, float y, float z, float phi,
+                       float theta, int speedLevel);
+
     // ── Trace 模式 ────────────────────────────────────
     Result enterTraceMode();
     Result canExitTraceMode();
 
 private:
-    ZMotionDriver* driver_;
-    JointProtocol  jointProtocol_;
-    TraceProtocol* traceProtocol_;
+    ZMotionDriver*   driver_;
+    JointProtocol    jointProtocol_;
+    CartJogProtocol  cartJogProtocol_;
+    TraceProtocol*   traceProtocol_;
 };

@@ -124,6 +124,12 @@ void MainWindow::enterMode(MotionMode mode)
             QMessageBox::warning(this, "错误", "进入 Joint 模式失败: " + ret.message);
             return;
         }
+    } else if (mode == MotionMode::CartJog) {
+        Result ret = ctx_->motionService()->enterCartJogMode();
+        if (!ret.ok) {
+            QMessageBox::warning(this, "错误", "进入 Cart Jog 模式失败: " + ret.message);
+            return;
+        }
     } else if (mode == MotionMode::Trace) {
         Result ret = ctx_->motionService()->enterTraceMode();
         if (!ret.ok) {
@@ -161,6 +167,8 @@ void MainWindow::exitCurrentMode()
     // ── 下发退出事件 ──────────────────────────────────
     if (currentMotionMode_ == MotionMode::DirectJoint) {
         ctx_->motionService()->exitJointMode();
+    } else if (currentMotionMode_ == MotionMode::CartJog) {
+        ctx_->motionService()->exitCartJogMode();
     }
 
     currentMotionMode_ = MotionMode::None;
@@ -262,6 +270,7 @@ void MainWindow::sendDirectJointCmd()
 
 void MainWindow::sendCartJogCmd()
 {
+    int cmdId = ui->ledit_cmd_id->text().toInt();
     float x = ui->ledit_jog_x->text().toFloat();
     float y = ui->ledit_jog_y->text().toFloat();
     float z = ui->ledit_jog_z->text().toFloat();
@@ -269,22 +278,15 @@ void MainWindow::sendCartJogCmd()
     float theta = ui->ledit_jog_theta->text().toFloat();
     int speedLevel = ui->ledit_speed_level->text().toInt();
 
-    // TODO: 调用 MotionService::sendCartJog({x,y,z,phi,theta}, speedLevel)
-    // MotionService 内部将笛卡尔运动量写入 MODBUS 寄存器 [地址待定]，
-    // 速度等级写入 [地址待定]，然后通过 CommandWriter::sendEvent() 下发运动触发事件
-    // 事件 ID 待定 (如 EventId::CartJog = 0x22)
-    //
-    // 参考实现:
-    //   float values[5] = {x, y, z, phi, theta};
-    //   for (int i = 0; i < 5; ++i) {
-    //       ctx_->driver()->writeModbusReg(JOG_BASE_ADDR + i, encodeFloat(values[i]));
-    //   }
-    //   ctx_->driver()->writeModbusReg(SPEED_LEVEL_ADDR, speedLevel);
-    //   ctx_->driver()->writeModbusReg(Reg::EVENT_NORMAL, EventId::CartJog);
+    Result ret = ctx_->motionService()->sendCartJog(cmdId, x, y, z, phi, theta, speedLevel);
+    if (!ret.ok) {
+        QMessageBox::warning(this, "下发失败", ret.message);
+        return;
+    }
 
     ui->statusbar->showMessage(
-        QString("Cart Jog: X=%1 Y=%2 Z=%3 Phi=%4 Theta=%5 Speed=%6")
-            .arg(x).arg(y).arg(z).arg(phi).arg(theta).arg(speedLevel), 3000);
+        QString("Cart Jog: Cmd=%1 X=%2 Y=%3 Z=%4 Phi=%5 Theta=%6 Speed=%7")
+            .arg(cmdId).arg(x).arg(y).arg(z).arg(phi).arg(theta).arg(speedLevel), 3000);
     qDebug() << "Cart Jog command sent.";
 }
 

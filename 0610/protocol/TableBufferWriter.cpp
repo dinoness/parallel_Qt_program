@@ -4,13 +4,13 @@
 #include <QElapsedTimer>
 #include <QThread>
 
-// ── 协议常量（仅本文件可见） ──────────────────────────────
-// MODBUS 寄存器：第 0~9 号寄存器对应 10 个缓冲组的状态
-// TABLE 布局：从索引 kTableBase 开始，每组占 kBlockFloats 个 float
-// 握手：kDataUpdate=1 表示已更新（等待控制器消费），非 1 即可写入
+#include "../core/ProtocolConstants.h"
 
-static constexpr int kTableBase     = 1000;                    // TABLE 起始索引
-static constexpr int kBlockFloats   = kDataGroupSize * kCmdSize; // 700
+// ── 协议常量 ──────────────────────────────────────────
+// 使用 ProtocolConstants.h 中的 Traj 定义
+// TABLE 布局: kTrajTableStart 开始, 每组 kTrajBlockSize 个 float
+// MODBUS 寄存器: 0~9 (kTrajGroupNum 个), 对应 10 个缓冲组
+// 握手: kDataUpdate=1 表示已更新
 
 TableBufferWriter::TableBufferWriter(ZMotionDriver* driver)
     : driver_(driver)
@@ -24,39 +24,39 @@ Result TableBufferWriter::sendAll(const QVector<TrajectoryPoint>& points,
     if (!ret.ok) return ret;
 
     int total = points.size();
-    int totalGroups = (total + kDataGroupSize - 1) / kDataGroupSize;
+    int totalGroups = (total + kTrajGroupSize - 1) / kTrajGroupSize;
     int loopNum = 0;
-    float blockData[kBlockFloats];
+    float blockData[kTrajBlockSize];
 
-    while (loopNum * kDataGroupSize < total) {
+    while (loopNum * kTrajGroupSize < total) {
         // 检查取消
         if (options.isCancelled && options.isCancelled()) {
             return Result::fail(3002, "轨迹下发已取消");
         }
 
-        int groupId = loopNum % kDataGroupNum;
+        int groupId = loopNum % kTrajGroupNum;
 
         // 1. 等待缓冲区有空位
         ret = waitBufferReady(groupId, options.timeoutMs, options.isCancelled);
         if (!ret.ok) return ret;
 
         // 2. 打包数据
-        int baseIdx = loopNum * kDataGroupSize;
-        for (int i = 0; i < kDataGroupSize; i++) {
+        int baseIdx = loopNum * kTrajGroupSize;
+        for (int i = 0; i < kTrajGroupSize; i++) {
             int ptIdx = baseIdx + i;
             if (ptIdx < total) {
-                points[ptIdx].toArray(&blockData[i * kCmdSize]);
+                points[ptIdx].toArray(&blockData[i * kTrajCmdSize]);
             } else {
                 // 末尾不足一组：补 MOVE(0)
-                blockData[i * kCmdSize] = 1;
-                for (int j = 1; j < kCmdSize; j++) {
-                    blockData[i * kCmdSize + j] = 0;
+                blockData[i * kTrajCmdSize] = 1;
+                for (int j = 1; j < kTrajCmdSize; j++) {
+                    blockData[i * kTrajCmdSize + j] = 0;
                 }
             }
         }
 
         // 3. 写入 TABLE
-        ret = writeTableBlock(groupId, blockData, kBlockFloats);
+        ret = writeTableBlock(groupId, blockData, kTrajBlockSize);
         if (!ret.ok) return ret;
 
         // 4. 标记已更新
@@ -112,7 +112,7 @@ Result TableBufferWriter::waitBufferReady(int groupId,
 
 Result TableBufferWriter::writeTableBlock(int groupId, const float* data, int count)
 {
-    int addr = kTableBase + groupId * kBlockFloats;
+    int addr = kTrajTableStart + groupId * kTrajBlockSize;
     return driver_->setTable(addr, count, data);
 }
 
