@@ -15,10 +15,8 @@ SOURCES += \
     motion/TrajectoryFile.cpp \
     motion/TrajectoryGenerator.cpp \
     protocol/CartJogProtocol.cpp \
-    protocol/CommandWriter.cpp \
     protocol/ControllerProtocol.cpp \
     protocol/JointProtocol.cpp \
-    protocol/TableBufferWriter.cpp \
     protocol/TraceProtocol.cpp \
     service/ConnectionService.cpp \
     service/MotionService.cpp \
@@ -35,10 +33,8 @@ HEADERS += \
     motion/TrajectoryFile.h \
     motion/TrajectoryGenerator.h \
     protocol/CartJogProtocol.h \
-    protocol/CommandWriter.h \
     protocol/ControllerProtocol.h \
     protocol/JointProtocol.h \
-    protocol/TableBufferWriter.h \
     protocol/TraceProtocol.h \
     service/ConnectionService.h \
     service/MotionService.h \

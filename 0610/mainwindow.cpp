@@ -227,7 +227,7 @@ void MainWindow::updateTraceButtonStates()
 void MainWindow::sendHomeCmd()
 {
     // TODO: 调用 MotionService::sendHome()
-    // MotionService 内部通过 CommandWriter::sendEvent() 向控制器下发回零事件
+    // MotionService 内部向控制器下发回零事件
     // 事件 ID 待定 (如 EventId::Home = 0x20)
     // ctx_->motionService()->sendHome();
     //

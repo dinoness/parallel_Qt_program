@@ -6,7 +6,6 @@
 
 #include "../core/Result.h"
 #include "../motion/TrajectoryTypes.h"
-#include "../protocol/TableBufferWriter.h"
 #include "../protocol/TraceProtocol.h"
 
 /// @brief 轨迹下发后台 Worker — 运行在独立 QThread 中
