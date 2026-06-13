@@ -19,7 +19,7 @@ Result JointProtocol::waitForEventReg(uint16& stuckValue)
 
     for (int elapsed = 0; elapsed < kTimeoutMs; elapsed += kIntervalMs) {
         uint16 val = 0;
-        Result ret = driver_->readModbusReg(kEventReg, val);
+        Result ret = driver_->readModbusReg(kRegEventLevel2, val);
         if (!ret.ok) return ret;
 
         if (val == 0) {
@@ -35,7 +35,7 @@ Result JointProtocol::waitForEventReg(uint16& stuckValue)
 
     return Result::fail(3205,
         QString("事件寄存器 %1 忙 (值=%2)，5s 超时")
-            .arg(kEventReg).arg(stuckValue));
+            .arg(kRegEventLevel2).arg(stuckValue));
 }
 
 // ===================================================================
@@ -78,18 +78,8 @@ Result JointProtocol::enterJointMode()
         return Result::fail(3201, "ZMotionDriver 未初始化");
     }
 
-    // 等待事件寄存器清零
-    uint16 stuckVal = 0;
-    Result waitRet = waitForEventReg(stuckVal);
-    if (!waitRet.ok) {
-        qDebug() << "enterJointMode: waitForEventReg failed:" << waitRet.message;
-        return waitRet;
-    }
-
     writeIndex_ = 0;
-
-    return driver_->writeModbusReg(kEventReg,
-                                   static_cast<uint16>(kEventJoint));
+    return Result::success();
 }
 
 Result JointProtocol::exitJointMode()
@@ -98,15 +88,8 @@ Result JointProtocol::exitJointMode()
         return Result::fail(3202, "ZMotionDriver 未初始化");
     }
 
-    uint16 stuckVal = 0;
-    Result waitRet = waitForEventReg(stuckVal);
-    if (!waitRet.ok) {
-        qDebug() << "exitJointMode: waitForEventReg failed:" << waitRet.message;
-        return waitRet;
-    }
-
-    return driver_->writeModbusReg(kEventReg,
-                                   static_cast<uint16>(kEventJointDone));
+    writeIndex_ = 0;
+    return Result::success();
 }
 
 // ===================================================================
@@ -133,6 +116,11 @@ Result JointProtocol::sendJointCommand(const float cmd[kJointCmdSize])
     if (!ret.ok) return ret;
 
     writeIndex_ = (writeIndex_ + 1) % kJointBufferSize;
+
+    // 指令下发完成后，下发关节运动事件
+    ret = driver_->writeModbusReg(kRegEventLevel2,
+                                  static_cast<uint16>(kEventJoint));
+    if (!ret.ok) return ret;
 
     return Result::success();
 }

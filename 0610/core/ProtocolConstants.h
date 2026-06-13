@@ -17,8 +17,10 @@ constexpr uint16_t kDataBlank  = 3;  // 空闲，可写入
 // 共享寄存器 (所有模式共用)
 // ===================================================================
 
-constexpr int kEventReg         = 92;   // 事件寄存器
-constexpr int kSystemStateReg   = 90;   // 系统状态寄存器
+constexpr int kRegEventLevel0         = 90;
+constexpr int kRegEventLevel1         = 91;
+constexpr int kRegEventLevel2         = 92;   // 事件寄存器
+constexpr int kSystemStateReg   = 90;   // 系统状态寄存器??
 
 // ── 系统状态值 ───────────────────────────────────────
 constexpr uint16_t kSysReady  = 4;
@@ -56,7 +58,7 @@ constexpr int kTrajBlockSize   = kTrajGroupSize * kTrajCmdSize;  // 700 = 每组
 constexpr int kTrajStatusBase  = 50;     // 指令执行状态 (50~69)
 
 // ===================================================================
-// 事件 ID (写入 MODBUS kEventReg)
+// 事件 ID (写入 MODBUS kRegEventLevel2 = 92)
 // ===================================================================
 
 constexpr int kEventIdle        = 0;

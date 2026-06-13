@@ -19,7 +19,7 @@ Result CartJogProtocol::waitForEventReg(uint16& stuckValue)
 
     for (int elapsed = 0; elapsed < kTimeoutMs; elapsed += kIntervalMs) {
         uint16 val = 0;
-        Result ret = driver_->readModbusReg(kEventReg, val);
+        Result ret = driver_->readModbusReg(kRegEventLevel2, val);
         if (!ret.ok) return ret;
 
         if (val == 0) {
@@ -35,7 +35,7 @@ Result CartJogProtocol::waitForEventReg(uint16& stuckValue)
 
     return Result::fail(3501,
         QString("事件寄存器 %1 忙 (值=%2)，5s 超时")
-            .arg(kEventReg).arg(stuckValue));
+            .arg(kRegEventLevel2).arg(stuckValue));
 }
 
 // ===================================================================
@@ -78,18 +78,8 @@ Result CartJogProtocol::enterCartJogMode()
         return Result::fail(3502, "ZMotionDriver 未初始化");
     }
 
-    // 等待事件寄存器清零
-    uint16 stuckVal = 0;
-    Result waitRet = waitForEventReg(stuckVal);
-    if (!waitRet.ok) {
-        qDebug() << "enterCartJogMode: waitForEventReg failed:" << waitRet.message;
-        return waitRet;
-    }
-
     writeIndex_ = 0;
-
-    return driver_->writeModbusReg(kEventReg,
-                                   static_cast<uint16>(kEventCartJog));
+    return Result::success();
 }
 
 Result CartJogProtocol::exitCartJogMode()
@@ -98,15 +88,8 @@ Result CartJogProtocol::exitCartJogMode()
         return Result::fail(3503, "ZMotionDriver 未初始化");
     }
 
-    uint16 stuckVal = 0;
-    Result waitRet = waitForEventReg(stuckVal);
-    if (!waitRet.ok) {
-        qDebug() << "exitCartJogMode: waitForEventReg failed:" << waitRet.message;
-        return waitRet;
-    }
-
-    return driver_->writeModbusReg(kEventReg,
-                                   static_cast<uint16>(kEventCartJogDone));
+    writeIndex_ = 0;
+    return Result::success();
 }
 
 // ===================================================================
@@ -133,6 +116,11 @@ Result CartJogProtocol::sendCartJogCommand(const float cmd[kCartJogCmdSize])
     if (!ret.ok) return ret;
 
     writeIndex_ = (writeIndex_ + 1) % kCartJogBufferSize;
+
+    // 指令下发完成后，下发 Cart Jog 运动事件
+    ret = driver_->writeModbusReg(kRegEventLevel2,
+                                  static_cast<uint16>(kEventCartJog));
+    if (!ret.ok) return ret;
 
     return Result::success();
 }

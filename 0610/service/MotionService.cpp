@@ -11,6 +11,22 @@ MotionService::MotionService(ZMotionDriver* driver,
 {
 }
 
+// ── Home ─────────────────────────────────────────────
+
+Result MotionService::sendHome()
+{
+    if (driver_ == nullptr) {
+        return Result::fail(3501, "ZMotionDriver 未初始化");
+    }
+
+    if (!driver_->isOpen()) {
+        return Result::fail(3502, "控制器未连接");
+    }
+
+    return driver_->writeModbusReg(kRegEventLevel2,
+                                   static_cast<uint16>(kEventHome));
+}
+
 // ── Joint 模式 ────────────────────────────────────────
 
 Result MotionService::enterJointMode()
@@ -47,7 +63,7 @@ Result MotionService::sendDirectJoint(float j1, float j2, float j3,
     }
 
     float cmd[kJointCmdSize];
-    cmd[0] = kCmdManualJoint;
+    cmd[0] = kCmdMove;
     cmd[1] = j1;
     cmd[2] = j2;
     cmd[3] = j3;

@@ -19,7 +19,7 @@ Result TraceProtocol::waitForEventReg(uint16& stuckValue)
 
     for (int elapsed = 0; elapsed < kTimeoutMs; elapsed += kIntervalMs) {
         uint16 val = 0;
-        Result ret = driver_->readModbusReg(kEventReg, val);
+        Result ret = driver_->readModbusReg(kRegEventLevel2, val);
         if (!ret.ok) return ret;
 
         if (val == 0) {
@@ -35,7 +35,7 @@ Result TraceProtocol::waitForEventReg(uint16& stuckValue)
 
     return Result::fail(3401,
         QString("事件寄存器 %1 忙 (值=%2)，5s 超时")
-            .arg(kEventReg).arg(stuckValue));
+            .arg(kRegEventLevel2).arg(stuckValue));
 }
 
 // ===================================================================
@@ -48,21 +48,12 @@ Result TraceProtocol::enterTraceMode()
         return Result::fail(3402, "ZMotionDriver 未初始化");
     }
 
-    // 下发中不允许发送新事件
+    // 下发中不允许重复进入
     if (sending_) {
-        return Result::fail(3410, "轨迹下发中，无法发送事件");
+        return Result::fail(3410, "轨迹下发中，无法进入 Trace 模式");
     }
 
-    // 等待事件寄存器清零
-    uint16 stuckVal = 0;
-    Result waitRet = waitForEventReg(stuckVal);
-    if (!waitRet.ok) {
-        qDebug() << "enterTraceMode: waitForEventReg failed:" << waitRet.message;
-        return waitRet;
-    }
-
-    return driver_->writeModbusReg(kEventReg,
-                                   static_cast<uint16>(kEventTraj));
+    return Result::success();
 }
 
 Result TraceProtocol::canExitTrace()
@@ -162,6 +153,14 @@ Result TraceProtocol::sendTrajectory(const QVector<TrajectoryPoint>& points,
         }
 
         qDebug() << "TraceProtocol sendTrajectory loop:" << loopNum;
+    }
+
+    // 第一组数据下发完成后，下发 Trace 事件
+    ret = driver_->writeModbusReg(kRegEventLevel2,
+                                  static_cast<uint16>(kEventTraj));
+    if (!ret.ok) {
+        sending_ = false;
+        return ret;
     }
 
     sending_ = false;

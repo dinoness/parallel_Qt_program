@@ -19,6 +19,9 @@ public:
                            TraceProtocol* traceProtocol,
                            QObject* parent = nullptr);
 
+    // ── Home ──────────────────────────────────────────
+    Result sendHome();
+
     // ── Joint 模式 ────────────────────────────────────
     Result enterJointMode();
     Result exitJointMode();

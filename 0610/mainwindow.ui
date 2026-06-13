@@ -664,7 +664,7 @@
    <widget class="QLabel" name="label_20">
     <property name="geometry">
      <rect>
-      <x>580</x>
+      <x>710</x>
       <y>130</y>
       <width>111</width>
       <height>19</height>
@@ -677,7 +677,7 @@
    <widget class="QLabel" name="label_motion_mode">
     <property name="geometry">
      <rect>
-      <x>700</x>
+      <x>830</x>
       <y>130</y>
       <width>181</width>
       <height>19</height>
@@ -685,6 +685,29 @@
     </property>
     <property name="text">
      <string>None</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="ledit_cmd_id">
+    <property name="geometry">
+     <rect>
+      <x>550</x>
+      <y>130</y>
+      <width>113</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_21">
+    <property name="geometry">
+     <rect>
+      <x>550</x>
+      <y>100</y>
+      <width>69</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Cmd</string>
     </property>
    </widget>
   </widget>

@@ -117,7 +117,7 @@ bool MainWindow::canEnterMode(MotionMode mode)
 
 void MainWindow::enterMode(MotionMode mode)
 {
-    // ── 下发进入事件 ──────────────────────────────────
+    // ── 切换模式状态（不在此处下发事件）──────────────────
     if (mode == MotionMode::DirectJoint) {
         Result ret = ctx_->motionService()->enterJointMode();
         if (!ret.ok) {
@@ -164,7 +164,7 @@ void MainWindow::exitCurrentMode()
         closeTraceThread();
     }
 
-    // ── 下发退出事件 ──────────────────────────────────
+    // ── 切换模式状态，不在此处下发事件 ──────────────────
     if (currentMotionMode_ == MotionMode::DirectJoint) {
         ctx_->motionService()->exitJointMode();
     } else if (currentMotionMode_ == MotionMode::CartJog) {
@@ -226,17 +226,22 @@ void MainWindow::updateTraceButtonStates()
 
 void MainWindow::sendHomeCmd()
 {
-    // TODO: 调用 MotionService::sendHome()
-    // MotionService 内部向控制器下发回零事件
-    // 事件 ID 待定 (如 EventId::Home = 0x20)
-    // ctx_->motionService()->sendHome();
-    //
-    // 参考实现:
-    //   ctx_->driver()->writeModbusReg(Reg::EVENT_NORMAL, EventId::Home);
+    if (!ctx_->driver()->isOpen()) {
+        QMessageBox::warning(this, "错误", "控制器未连接");
+        return;
+    }
+
+    Result ret = ctx_->motionService()->sendHome();
+    if (!ret.ok) {
+        QMessageBox::warning(this, "回零失败", ret.message);
+        ui->statusbar->showMessage("回零指令下发失败", 3000);
+        return;
+    }
 
     ui->statusbar->showMessage("回零指令已下发", 3000);
     ui->label_home_state->setText("Yes");
-    qDebug() << "Home command sent.";
+    qDebug() << "Home command sent to MODBUS[" << kRegEventLevel2
+             << "] = " << kEventHome;
 }
 
 // ===================================================================

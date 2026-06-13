@@ -31,15 +31,14 @@ public:
     explicit TraceProtocol(ZMotionDriver* driver);
 
     // ── 模式切换 ──────────────────────────────────────
-    /// @brief 进入轨迹模式 — 发送 EVENT_TRAJ 到 MODBUS[92]
+    /// @brief 进入轨迹模式 — 仅验证状态，不下发事件
     Result enterTraceMode();
 
     /// @brief 检查是否允许退出 — 读取系统状态，SYS_RUNNING 时返回失败
     Result canExitTrace();
 
     // ── 轨迹下发 ──────────────────────────────────────
-    /// @brief 下发轨迹 (含 ZAux_Trigger)
-    /// @note 下发过程中不下发新的事件
+    /// @brief 下发轨迹 (含 ZAux_Trigger)，第一组数据下发后写入事件
     Result sendTrajectory(const QVector<TrajectoryPoint>& points,
                           const TrajectorySendOptions& options = TrajectorySendOptions());
 

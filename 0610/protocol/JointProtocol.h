@@ -8,16 +8,15 @@
 ///
 /// 环形缓冲: 5 条指令轮流写入 TABLE[300~334]。
 /// 状态读回: MODBUS[80~89]。
-/// 事件通知: MODBUS[92]。
 class JointProtocol
 {
 public:
     explicit JointProtocol(ZMotionDriver* driver);
 
-    /// @brief 进入关节模式 — 发送 EVENT_JOINT 到 MODBUS[92]
+    /// @brief 进入关节模式 — 初始化写指针，不下发事件
     Result enterJointMode();
 
-    /// @brief 退出关节模式 — 发送 EVENT_JOINT_DONE 到 MODBUS[92]
+    /// @brief 退出关节模式 — 清理写指针，不下发事件
     Result exitJointMode();
 
     /// @brief 下发一条关节指令到 TABLE 环形缓冲

@@ -8,16 +8,15 @@
 ///
 /// 环形缓冲: 5 条指令轮流写入 TABLE[350~384]。
 /// 状态读回: MODBUS[70~79]。
-/// 事件通知: MODBUS[92]。
 class CartJogProtocol
 {
 public:
     explicit CartJogProtocol(ZMotionDriver* driver);
 
-    /// @brief 进入 Cart Jog 模式 — 发送 kEventCartJog 到 MODBUS[92]
+    /// @brief 进入 Cart Jog 模式 — 初始化写指针，不下发事件
     Result enterCartJogMode();
 
-    /// @brief 退出 Cart Jog 模式 — 发送 kEventCartJogDone 到 MODBUS[92]
+    /// @brief 退出 Cart Jog 模式 — 清理写指针，不下发事件
     Result exitCartJogMode();
 
     /// @brief 下发一条 Cart Jog 指令到 TABLE 环形缓冲
