@@ -6,33 +6,25 @@
 
 /// @brief 关节指令协议 — 封装 Direct Joint 模式的 TABLE 写入与 MODBUS 寄存器操作
 ///
-/// 环形缓冲: 5 条指令轮流写入 TABLE[300~334]。
-/// 状态读回: MODBUS[80~89]。
+/// 每次下发覆盖 TABLE[kJointTableStart]，无缓冲。
+/// 下发前校验系统状态: kSysServoReady 或 kSysReady。
 class JointProtocol
 {
 public:
     explicit JointProtocol(ZMotionDriver* driver);
 
-    /// @brief 进入关节模式 — 初始化写指针，不下发事件
+    /// @brief 进入关节模式 — 初始化状态，不下发事件
     Result enterJointMode();
 
-    /// @brief 退出关节模式 — 清理写指针，不下发事件
+    /// @brief 退出关节模式 — 清理状态，不下发事件
     Result exitJointMode();
 
-    /// @brief 下发一条关节指令到 TABLE 环形缓冲
+    /// @brief 下发一条关节指令到 TABLE[kJointTableStart]
     /// @param cmd 7 个 float: [cmd, j1, j2, j3, j4, j5, speed]
+    /// @note 先校验 kRegSystemState ∈ {kSysServoReady, kSysReady}，
+    ///       再写 TABLE、写状态、写事件
     Result sendJointCommand(const float cmd[kJointCmdSize]);
 
-    /// @brief 读取当前写指针位置的指令状态
-    Result readJointStatus(int slot, uint16& status);
-
 private:
-    /// @brief 事件寄存器写入前等待 — 轮询直到寄存器为 0 或超时 (5s)
-    Result waitForEventReg(uint16& stuckValue);
-
-    /// @brief 等待槽位空闲 — 轮询直到状态 ≠ kDataUpdate 或超时
-    Result waitSlotReady(int slot);
-
     ZMotionDriver* driver_;
-    int writeIndex_ = 0;  // 当前写入槽位 (0~4)
 };

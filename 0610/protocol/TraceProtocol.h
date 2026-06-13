@@ -23,7 +23,7 @@ struct TrajectorySendOptions
 /// @brief 轨迹模式协议 — 封装 Trace 模式的所有协议操作
 ///
 /// 模式切换: MODBUS 寄存器 90/92。
-/// 轨迹下发: TABLE[kTrajTableStart] + MODBUS[kTrajStatusBase] 缓冲握手。
+/// 轨迹下发: TABLE[kTrajTableStart] + MODBUS[kRegTrajStatusBase] 缓冲握手。
 /// 下发过程中阻止发送新的事件。
 class TraceProtocol
 {

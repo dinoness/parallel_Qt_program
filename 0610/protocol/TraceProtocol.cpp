@@ -63,13 +63,13 @@ Result TraceProtocol::canExitTrace()
     }
 
     uint16 state = 0;
-    Result ret = driver_->readModbusReg(kSystemStateReg, state);
+    Result ret = driver_->readModbusReg(kRegSystemState, state);
     if (!ret.ok) return ret;
 
     if (state == kSysRunning) {
         return Result::fail(3404,
             QString("控制器正在运行轨迹 (状态寄存器 %1 = SYS_RUNNING)，请先停止轨迹")
-                .arg(kSystemStateReg));
+                .arg(kRegSystemState));
     }
 
     return Result::success();
@@ -178,7 +178,7 @@ Result TraceProtocol::waitBufferReady(int groupId,
                                        const std::function<bool()>& isCancelled)
 {
     uint16 state = 0;
-    int addr = kTrajStatusBase + groupId;
+    int addr = kRegTrajStatusBase + groupId;
 
     QElapsedTimer timer;
     timer.start();
@@ -213,6 +213,6 @@ Result TraceProtocol::writeTableBlock(int groupId, const float* data, int count)
 
 Result TraceProtocol::markBlockReady(int groupId)
 {
-    int addr = kTrajStatusBase + groupId;
+    int addr = kRegTrajStatusBase + groupId;
     return driver_->writeModbusReg(addr, kDataUpdate);
 }
