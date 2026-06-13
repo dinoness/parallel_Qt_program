@@ -75,7 +75,11 @@ constexpr int kEventJointDone   = 4;  // 退出 Direct Joint
 constexpr int kEventCartJog     = 5;
 constexpr int kEventCartJogDone = 6;
 constexpr int kEventTraj        = 7;  // 进入 Trace
-
+constexpr int kEventStop        = 9;
+constexpr int kEventPause       = 10;
+constexpr int kEventResume      = 11;
+constexpr int kEventErrorReset  = 90;
+constexpr int kEventEstop       = 99;
 
 // ===================================================================
 // 运动指令ID

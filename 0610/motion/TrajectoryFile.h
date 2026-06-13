@@ -17,6 +17,9 @@ public:
     Result writeCsv(const QString& fileName, const QVector<TrajectoryPoint>& points);
     Result readCsv(const QString& fileName, QVector<TrajectoryPoint>& points);
 
+    /// @brief 返回 .dat 文件完整路径，例如 "dataDir/01.dat"
+    QString datPath(const QString& fileName) const;
+
 private:
     QString dataDir_;
 };

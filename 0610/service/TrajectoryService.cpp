@@ -70,55 +70,34 @@ Result TrajectoryService::csvToDat(const QString& csvFile, const QString& datFil
     return file_.writeDat(datFile, points);
 }
 
-// ── 同步下发（调试用，UI 不应直接调用） ──────────────────────────
-
-Result TrajectoryService::sendToControllerSync(const QString& fileName)
-{
-    if (driver_ == nullptr) {
-        return Result::fail(2102, "ZMotionDriver 未初始化");
-    }
-
-    if (!driver_->isOpen()) {
-        return Result::fail(2103, "控制器未连接，无法下发轨迹");
-    }
-
-    QVector<TrajectoryPoint> points;
-    Result readRet = file_.readDat(fileName, points);
-    if (!readRet.ok) return readRet;
-
-    qDebug() << "sendToControllerSync: read" << points.size() << "points";
-
-    if (protocol_ == nullptr) {
-        return Result::fail(3301, "TraceProtocol 未初始化");
-    }
-
-    return protocol_->sendTrajectory(points);
-}
-
 // ── 异步下发 ──────────────────────────────────────────────────────
 
-Result TrajectoryService::startSendTrajectoryAsync(const QString& filePath)
-{
-    QVector<TrajectoryPoint> points;
-    Result ret = loadPoints(filePath, points);
-    if (!ret.ok) return ret;
-
-    return startSendTrajectoryAsync(points);
-}
-
-Result TrajectoryService::startSendTrajectoryAsync(const QVector<TrajectoryPoint>& points)
+Result TrajectoryService::startSendTrajectoryAsync(const QString& fileName)
 {
     if (protocol_ == nullptr) {
         return Result::fail(3301, "TraceProtocol 未初始化");
-    }
-
-    if (points.isEmpty()) {
-        return Result::fail(3302, "轨迹数据为空，无法下发");
     }
 
     if (sending_ || sendThread_ != nullptr || sendWorker_ != nullptr) {
         return Result::fail(3303, "当前已有轨迹正在下发");
     }
+
+    // 先快速读取文件以获取总点数（用于进度计算），
+    // 实际下发时 Protocol 层会再次打开文件流式读取
+    QVector<TrajectoryPoint> points;
+    Result ret = file_.readDat(fileName, points);
+    if (!ret.ok) return ret;
+
+    if (points.isEmpty()) {
+        return Result::fail(3302, "轨迹数据为空，无法下发");
+    }
+
+    int totalPoints = points.size();
+    // 释放内存：文件已存在，下发时流式读取
+    points.clear();
+
+    // 构建完整 .dat 文件路径
+    QString datFilePath = file_.datPath(fileName);
 
     sending_ = true;
     emit sendingStateChanged(true);
@@ -129,8 +108,8 @@ Result TrajectoryService::startSendTrajectoryAsync(const QVector<TrajectoryPoint
     sendWorker_->moveToThread(sendThread_);
 
     connect(sendThread_, &QThread::started,
-            sendWorker_, [this, points]() {
-                sendWorker_->startSend(points);
+            sendWorker_, [this, datFilePath, totalPoints]() {
+                sendWorker_->startSend(datFilePath, totalPoints);
             });
 
     connect(sendWorker_, &TrajectorySendWorker::progressChanged,
@@ -171,6 +150,53 @@ void TrajectoryService::cancelSendTrajectory()
                                   "cancel",
                                   Qt::QueuedConnection);
     }
+}
+
+void TrajectoryService::pauseSendTrajectory()
+{
+    if (sendWorker_ != nullptr) {
+        QMetaObject::invokeMethod(sendWorker_,
+                                  "pause",
+                                  Qt::QueuedConnection);
+    }
+}
+
+void TrajectoryService::resumeSendTrajectory()
+{
+    if (sendWorker_ != nullptr) {
+        QMetaObject::invokeMethod(sendWorker_,
+                                  "resume",
+                                  Qt::QueuedConnection);
+    }
+}
+
+bool TrajectoryService::isPaused() const
+{
+    return sendWorker_ != nullptr && sendWorker_->isPaused();
+}
+
+bool TrajectoryService::stopSendThread(int timeoutMs)
+{
+    if (sendThread_ == nullptr && sendWorker_ == nullptr) {
+        return true;  // 没有线程在跑
+    }
+
+    // 先发取消信号
+    cancelSendTrajectory();
+
+    // 等待线程结束
+    if (sendThread_ != nullptr) {
+        sendThread_->quit();
+        if (!sendThread_->wait(timeoutMs)) {
+            // 超时：强制终止
+            sendThread_->terminate();
+            sendThread_->wait(1000);
+            qDebug() << "TrajectoryService::stopSendThread: thread terminated after timeout";
+        }
+    }
+
+    cleanupSendThread();
+    return true;
 }
 
 void TrajectoryService::cleanupSendThread()

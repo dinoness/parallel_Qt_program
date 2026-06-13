@@ -22,6 +22,13 @@ public:
     // ── Home ──────────────────────────────────────────
     Result sendHome();
 
+    // ── 全局控制 ──────────────────────────────────────
+    Result sendPause();
+    Result sendResume();
+    Result sendStop();
+    Result sendEstop();
+    Result sendErrorReset();
+
     // ── Joint 模式 ────────────────────────────────────
     Result enterJointMode();
     Result exitJointMode();
@@ -36,6 +43,7 @@ public:
 
     // ── Trace 模式 ────────────────────────────────────
     Result enterTraceMode();
+    Result exitTraceMode();
     Result canExitTraceMode();
 
 private:

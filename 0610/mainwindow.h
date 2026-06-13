@@ -62,6 +62,12 @@ private slots:
     void on_btn_thread_close_clicked();
     void on_btn_trace_send_clicked();
 
+    // Control
+    void on_btn_pause_resume_clicked();
+    void on_btn_stop_clicked();
+    void on_btn_emergency_stop_clicked();
+    void on_btn_error_reset_clicked();
+
     // Data
     void on_btn_trace_test_clicked();
     void on_btn_trace_read_clicked();
@@ -86,6 +92,11 @@ private:
     void openTraceThread();
     void closeTraceThread();
     void sendTraceFile();
+
+    // ── 全局控制 ──────────────────────────────────────
+    void sendPause();
+    void sendResume();
+    bool paused_ = false;
 
     Ui::MainWindow *ui;
     AppContext* ctx_;

@@ -169,6 +169,8 @@ void MainWindow::exitCurrentMode()
         ctx_->motionService()->exitJointMode();
     } else if (currentMotionMode_ == MotionMode::CartJog) {
         ctx_->motionService()->exitCartJogMode();
+    } else if (currentMotionMode_ == MotionMode::Trace) {
+        ctx_->motionService()->exitTraceMode();
     }
 
     currentMotionMode_ = MotionMode::None;
@@ -317,9 +319,9 @@ void MainWindow::openTraceThread()
 
 void MainWindow::closeTraceThread()
 {
-    // 如果正在下发，先取消
+    // 如果正在下发，先取消并等待线程结束
     if (ctx_->trajectoryService()->isSending()) {
-        ctx_->trajectoryService()->cancelSendTrajectory();
+        ctx_->trajectoryService()->stopSendThread(5000);
     }
 
     traceThreadOpened_ = false;
@@ -628,14 +630,6 @@ void MainWindow::on_btn_trace_exit_clicked()
 
 void MainWindow::on_btn_thread_open_clicked()
 {
-    // 发送中 → 取消下发
-    if (ctx_->trajectoryService()->isSending()) {
-        ctx_->trajectoryService()->cancelSendTrajectory();
-        ui->btn_thread_open->setEnabled(false);
-        ui->statusbar->showMessage("正在取消轨迹下发...");
-        return;
-    }
-
     // Trace 模式 → 开启线程
     if (currentMotionMode_ != MotionMode::Trace) {
         QMessageBox::warning(this, "错误", "请先进入 Trace 模式");
@@ -708,5 +702,133 @@ void MainWindow::on_btn_xlsx_to_dat_clicked()
 void MainWindow::on_btn_trace_to_dat_clicked()
 {
     trace_generation();
+}
+
+
+void MainWindow::on_btn_pause_resume_clicked()
+{
+    if (!ctx_->driver()->isOpen()) {
+        QMessageBox::warning(this, "错误", "控制器未连接");
+        return;
+    }
+
+    if (paused_) {
+        // ── RESUME ──────────────────────────────────
+        Result ret = ctx_->motionService()->sendResume();
+        if (!ret.ok) {
+            QMessageBox::warning(this, "Resume 失败", ret.message);
+            return;
+        }
+
+        // Trace 模式：恢复轨迹下发
+        if (currentMotionMode_ == MotionMode::Trace) {
+            ctx_->trajectoryService()->resumeSendTrajectory();
+        }
+
+        paused_ = false;
+        ui->btn_pause_resume->setText("PAUSE");
+        ui->statusbar->showMessage("Resume 指令已下发", 3000);
+        qDebug() << "Resume command sent to MODBUS[" << kRegEventLevel2
+                 << "] = " << kEventResume;
+    } else {
+        // ── PAUSE ────────────────────────────────────
+        Result ret = ctx_->motionService()->sendPause();
+        if (!ret.ok) {
+            QMessageBox::warning(this, "Pause 失败", ret.message);
+            return;
+        }
+
+        // Trace 模式：暂停轨迹下发，保留进度
+        if (currentMotionMode_ == MotionMode::Trace) {
+            ctx_->trajectoryService()->pauseSendTrajectory();
+        }
+
+        paused_ = true;
+        ui->btn_pause_resume->setText("RESUME");
+        ui->statusbar->showMessage("Pause 指令已下发", 3000);
+        qDebug() << "Pause command sent to MODBUS[" << kRegEventLevel2
+                 << "] = " << kEventPause;
+    }
+}
+
+
+void MainWindow::on_btn_stop_clicked()
+{
+    if (!ctx_->driver()->isOpen()) {
+        QMessageBox::warning(this, "错误", "控制器未连接");
+        return;
+    }
+
+    Result ret = ctx_->motionService()->sendStop();
+    if (!ret.ok) {
+        QMessageBox::warning(this, "Stop 失败", ret.message);
+        return;
+    }
+
+    // Trace 模式：结束当前轨迹下发，不保留进度
+    if (currentMotionMode_ == MotionMode::Trace) {
+        ctx_->trajectoryService()->stopSendThread(5000);
+    }
+
+    // 恢复 PAUSE 按钮状态
+    if (paused_) {
+        paused_ = false;
+        ui->btn_pause_resume->setText("PAUSE");
+    }
+
+    ui->statusbar->showMessage("Stop 指令已下发", 3000);
+    qDebug() << "Stop command sent to MODBUS[" << kRegEventLevel2
+             << "] = " << kEventStop;
+}
+
+
+void MainWindow::on_btn_emergency_stop_clicked()
+{
+    if (!ctx_->driver()->isOpen()) {
+        QMessageBox::warning(this, "错误", "控制器未连接");
+        return;
+    }
+
+    // Trace 模式：先发取消信号让 Worker 退出堵塞循环，
+    // 不在此等待线程结束，避免阻塞 UI
+    if (currentMotionMode_ == MotionMode::Trace) {
+        ctx_->trajectoryService()->cancelSendTrajectory();
+    }
+
+    // 直接写 MODBUS，mutex 短暂排队后即可写入
+    Result ret = ctx_->motionService()->sendEstop();
+    if (!ret.ok) {
+        QMessageBox::warning(this, "Emergency Stop 失败", ret.message);
+        return;
+    }
+
+    // 恢复 PAUSE 按钮状态
+    if (paused_) {
+        paused_ = false;
+        ui->btn_pause_resume->setText("PAUSE");
+    }
+
+    ui->statusbar->showMessage("Emergency Stop 指令已下发", 3000);
+    qDebug() << "Estop command sent to MODBUS[" << kRegEventLevel0
+             << "] = " << kEventEstop;
+}
+
+
+void MainWindow::on_btn_error_reset_clicked()
+{
+    if (!ctx_->driver()->isOpen()) {
+        QMessageBox::warning(this, "错误", "控制器未连接");
+        return;
+    }
+
+    Result ret = ctx_->motionService()->sendErrorReset();
+    if (!ret.ok) {
+        QMessageBox::warning(this, "Error Reset 失败", ret.message);
+        return;
+    }
+
+    ui->statusbar->showMessage("Error Reset 指令已下发", 3000);
+    qDebug() << "ErrorReset command sent to MODBUS[" << kRegEventLevel0
+             << "] = " << kEventErrorReset;
 }
 

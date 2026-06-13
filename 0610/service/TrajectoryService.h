@@ -29,14 +29,18 @@ public:
     Result datToCsv(const QString& datFile, const QString& csvFile);
     Result csvToDat(const QString& csvFile, const QString& datFile);
 
-    // ── 同步下发（调试用） ─────────────────────────────
-    Result sendToControllerSync(const QString& fileName);
-
     // ── 异步下发（UI 调用） ────────────────────────────
-    Result startSendTrajectoryAsync(const QString& filePath);
-    Result startSendTrajectoryAsync(const QVector<TrajectoryPoint>& points);
+    /// @brief 流式下发轨迹文件：Worker 中直接读 .dat 边读边发
+    Result startSendTrajectoryAsync(const QString& fileName);
+    /// @brief 暂停轨迹下发：设置 Worker 暂停标志，保留进度
+    void   pauseSendTrajectory();
+    /// @brief 恢复轨迹下发：清除 Worker 暂停标志，继续下发
+    void   resumeSendTrajectory();
     void   cancelSendTrajectory();
+    /// @brief 停止下发线程，带超时等待 (ms)，返回 true 表示线程已结束
+    bool   stopSendThread(int timeoutMs = 5000);
     bool   isSending() const;
+    bool   isPaused() const;
 
 signals:
     void sendProgressChanged(int sentGroups, int totalGroups, int percent);
@@ -46,11 +50,11 @@ signals:
 private:
     void cleanupSendThread();
 
-    ZMotionDriver*      driver_   = nullptr;
-    TraceProtocol*      protocol_ = nullptr;
-    TrajectoryFile      file_;
+    ZMotionDriver*           driver_   = nullptr;
+    TraceProtocol*           protocol_ = nullptr;
+    TrajectoryFile           file_;
 
-    QThread*             sendThread_ = nullptr;
-    TrajectorySendWorker* sendWorker_ = nullptr;
-    bool                 sending_    = false;
+    QThread*                 sendThread_ = nullptr;
+    TrajectorySendWorker*    sendWorker_ = nullptr;
+    bool                     sending_    = false;
 };

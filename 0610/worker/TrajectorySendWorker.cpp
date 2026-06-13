@@ -1,23 +1,38 @@
 #include "TrajectorySendWorker.h"
 
+#include <QThread>
 #include <QtGlobal>
 
 TrajectorySendWorker::TrajectorySendWorker(TraceProtocol* protocol,
                                            QObject* parent)
     : QObject(parent),
       protocol_(protocol),
-      cancelRequested_(false)
+      cancelRequested_(false),
+      paused_(false)
 {
 }
 
 void TrajectorySendWorker::cancel()
 {
     cancelRequested_.store(true);
+    // 唤醒可能因 pause 而阻塞的循环
+    paused_.store(false);
 }
 
-void TrajectorySendWorker::startSend(QVector<TrajectoryPoint> points)
+void TrajectorySendWorker::pause()
+{
+    paused_.store(true);
+}
+
+void TrajectorySendWorker::resume()
+{
+    paused_.store(false);
+}
+
+void TrajectorySendWorker::startSend(const QString& datFilePath, int totalPoints)
 {
     cancelRequested_.store(false);
+    paused_.store(false);
 
     if (protocol_ == nullptr) {
         emit finished(Result::fail(3201, "TraceProtocol 未初始化"));
@@ -25,10 +40,13 @@ void TrajectorySendWorker::startSend(QVector<TrajectoryPoint> points)
     }
 
     TrajectorySendOptions options;
-    options.timeoutMs = 10000;
 
     options.isCancelled = [this]() {
         return cancelRequested_.load();
+    };
+
+    options.isPaused = [this]() {
+        return paused_.load();
     };
 
     options.onProgress = [this](int sentGroups, int totalGroups) {
@@ -40,7 +58,7 @@ void TrajectorySendWorker::startSend(QVector<TrajectoryPoint> points)
         emit progressChanged(sentGroups, totalGroups, percent);
     };
 
-    Result ret = protocol_->sendTrajectory(points, options);
+    Result ret = protocol_->sendTrajectory(datFilePath, totalPoints, options);
 
     emit finished(ret);
 }

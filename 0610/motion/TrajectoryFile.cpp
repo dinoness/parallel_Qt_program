@@ -138,3 +138,8 @@ Result TrajectoryFile::readCsv(const QString& fileName, QVector<TrajectoryPoint>
     qDebug() << "readCsv success:" << path << "points:" << points.size();
     return Result::success();
 }
+
+QString TrajectoryFile::datPath(const QString& fileName) const
+{
+    return QString("%1%2.dat").arg(dataDir_, fileName);
+}
