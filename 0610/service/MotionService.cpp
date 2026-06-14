@@ -1,74 +1,50 @@
 #include "MotionService.h"
 
 MotionService::MotionService(ZMotionDriver* driver,
+                             CommandProtocol* commandProtocol,
                              TraceProtocol* traceProtocol,
                              QObject* parent)
     : QObject(parent)
     , driver_(driver)
+    , commandProtocol_(commandProtocol)
     , jointProtocol_(driver)
     , cartJogProtocol_(driver)
     , traceProtocol_(traceProtocol)
 {
 }
 
-// ── Home ─────────────────────────────────────────────
+// ── 全局控制 ──────────────────────────────────────────
 
 Result MotionService::sendHome()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3501, "ZMotionDriver 未初始化");
+    if (commandProtocol_ == nullptr) {
+        return Result::fail(3501, "CommandProtocol 未初始化");
     }
-
-    if (!driver_->isOpen()) {
-        return Result::fail(3502, "控制器未连接");
-    }
-
-    return driver_->writeModbusReg(kRegEventLevel2,
-                                   static_cast<uint16>(kEventHome));
+    return commandProtocol_->sendHome();
 }
-
-// ── 全局控制 ──────────────────────────────────────────
 
 Result MotionService::sendPause()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3701, "ZMotionDriver 未初始化");
+    if (commandProtocol_ == nullptr) {
+        return Result::fail(3701, "CommandProtocol 未初始化");
     }
-
-    if (!driver_->isOpen()) {
-        return Result::fail(3702, "控制器未连接");
-    }
-
-    return driver_->writeModbusReg(kRegEventLevel2,
-                                   static_cast<uint16>(kEventPause));
+    return commandProtocol_->sendPause();
 }
 
 Result MotionService::sendResume()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3703, "ZMotionDriver 未初始化");
+    if (commandProtocol_ == nullptr) {
+        return Result::fail(3703, "CommandProtocol 未初始化");
     }
-
-    if (!driver_->isOpen()) {
-        return Result::fail(3704, "控制器未连接");
-    }
-
-    return driver_->writeModbusReg(kRegEventLevel2,
-                                   static_cast<uint16>(kEventResume));
+    return commandProtocol_->sendResume();
 }
 
 Result MotionService::sendStop()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3705, "ZMotionDriver 未初始化");
+    if (commandProtocol_ == nullptr) {
+        return Result::fail(3705, "CommandProtocol 未初始化");
     }
-
-    if (!driver_->isOpen()) {
-        return Result::fail(3706, "控制器未连接");
-    }
-
-    return driver_->writeModbusReg(kRegEventLevel2,
-                                   static_cast<uint16>(kEventStop));
+    return commandProtocol_->sendStop();
 }
 
 Result MotionService::sendEstop()
@@ -81,59 +57,51 @@ Result MotionService::sendEstop()
         return Result::fail(3708, "控制器未连接");
     }
 
-    return driver_->writeModbusReg(kRegEventLevel0,
-                                   static_cast<uint16>(kEventEstop));
+    // 第一步：直接请求 ZMotion 快速停止运动
+    Result ret = driver_->rapidStop(2);
+    if (!ret.ok) {
+        return ret;
+    }
+
+    // 第二步：写入最高优先级 ESTOP 事件，让控制器 RTBasic 状态机进入 ESTOP
+    if (commandProtocol_ == nullptr) {
+        return Result::fail(3709, "CommandProtocol 未初始化");
+    }
+
+    ret = commandProtocol_->sendEstop();
+    if (!ret.ok) {
+        return Result::fail(
+            ret.code,
+            QString("RapidStop 已执行，但 ESTOP 事件写入失败：%1").arg(ret.message)
+        );
+    }
+
+    return Result::success();
 }
 
 Result MotionService::sendErrorReset()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3709, "ZMotionDriver 未初始化");
+    if (commandProtocol_ == nullptr) {
+        return Result::fail(3709, "CommandProtocol 未初始化");
     }
-
-    if (!driver_->isOpen()) {
-        return Result::fail(3710, "控制器未连接");
-    }
-
-    return driver_->writeModbusReg(kRegEventLevel0,
-                                   static_cast<uint16>(kEventErrorReset));
+    return commandProtocol_->sendErrorReset();
 }
 
 // ── Joint 模式 ────────────────────────────────────────
 
 Result MotionService::enterJointMode()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3301, "ZMotionDriver 未初始化");
-    }
-
-    if (!driver_->isOpen()) {
-        return Result::fail(3302, "控制器未连接");
-    }
-
     return jointProtocol_.enterJointMode();
 }
 
 Result MotionService::exitJointMode()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3303, "ZMotionDriver 未初始化");
-    }
-
     return jointProtocol_.exitJointMode();
 }
 
 Result MotionService::sendDirectJoint(float j1, float j2, float j3,
                                       float j4, float j5, int speedLevel)
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3304, "ZMotionDriver 未初始化");
-    }
-
-    if (!driver_->isOpen()) {
-        return Result::fail(3305, "控制器未连接");
-    }
-
     float cmd[kJointCmdSize];
     cmd[0] = kCmdMove;
     cmd[1] = j1;
@@ -150,23 +118,11 @@ Result MotionService::sendDirectJoint(float j1, float j2, float j3,
 
 Result MotionService::enterCartJogMode()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3601, "ZMotionDriver 未初始化");
-    }
-
-    if (!driver_->isOpen()) {
-        return Result::fail(3602, "控制器未连接");
-    }
-
     return cartJogProtocol_.enterCartJogMode();
 }
 
 Result MotionService::exitCartJogMode()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3603, "ZMotionDriver 未初始化");
-    }
-
     return cartJogProtocol_.exitCartJogMode();
 }
 
@@ -174,14 +130,6 @@ Result MotionService::sendCartJog(int cmdId,
                                   float x, float y, float z,
                                   float phi, float theta, int speedLevel)
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3604, "ZMotionDriver 未初始化");
-    }
-
-    if (!driver_->isOpen()) {
-        return Result::fail(3605, "控制器未连接");
-    }
-
     float cmd[kCartJogCmdSize];
     cmd[0] = static_cast<float>(cmdId);
     cmd[1] = x;
@@ -198,14 +146,6 @@ Result MotionService::sendCartJog(int cmdId,
 
 Result MotionService::enterTraceMode()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3405, "ZMotionDriver 未初始化");
-    }
-
-    if (!driver_->isOpen()) {
-        return Result::fail(3406, "控制器未连接");
-    }
-
     if (traceProtocol_ == nullptr) {
         return Result::fail(3408, "TraceProtocol 未初始化");
     }
@@ -215,10 +155,6 @@ Result MotionService::enterTraceMode()
 
 Result MotionService::exitTraceMode()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3415, "ZMotionDriver 未初始化");
-    }
-
     if (traceProtocol_ == nullptr) {
         return Result::fail(3416, "TraceProtocol 未初始化");
     }
@@ -228,10 +164,6 @@ Result MotionService::exitTraceMode()
 
 Result MotionService::canExitTraceMode()
 {
-    if (driver_ == nullptr) {
-        return Result::fail(3407, "ZMotionDriver 未初始化");
-    }
-
     if (traceProtocol_ == nullptr) {
         return Result::fail(3409, "TraceProtocol 未初始化");
     }

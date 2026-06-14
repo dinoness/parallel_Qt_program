@@ -130,6 +130,29 @@ Result ZMotionDriver::trigger()
 }
 
 
+Result ZMotionDriver::rapidStop(int mode)
+{
+    QMutexLocker locker(&mutex_);
+
+    if (!opened_ || handle_ == nullptr) {
+        return Result::fail(1010, "控制器未连接，无法执行 RapidStop");
+    }
+
+    int ret = ZAux_Direct_Rapidstop(handle_, mode);
+
+    if (ret != 0) {
+        return Result::fail(
+            ret,
+            QString("ZAux_Direct_Rapidstop 执行失败，mode=%1，错误码=%2")
+                .arg(mode)
+                .arg(ret)
+        );
+    }
+
+    return Result::success();
+}
+
+
 Result ZMotionDriver::setTable(int start, int count, const float* data)
 {
     QMutexLocker locker(&mutex_);

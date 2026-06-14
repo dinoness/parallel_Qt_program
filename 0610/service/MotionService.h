@@ -5,6 +5,7 @@
 #include "../core/ProtocolConstants.h"
 #include "../core/Result.h"
 #include "../protocol/CartJogProtocol.h"
+#include "../protocol/CommandProtocol.h"
 #include "../protocol/JointProtocol.h"
 #include "../protocol/TraceProtocol.h"
 #include "../zmotion/ZMotionDriver.h"
@@ -16,13 +17,12 @@ class MotionService : public QObject
 
 public:
     explicit MotionService(ZMotionDriver* driver,
+                           CommandProtocol* commandProtocol,
                            TraceProtocol* traceProtocol,
                            QObject* parent = nullptr);
 
-    // ── Home ──────────────────────────────────────────
-    Result sendHome();
-
     // ── 全局控制 ──────────────────────────────────────
+    Result sendHome();
     Result sendPause();
     Result sendResume();
     Result sendStop();
@@ -48,6 +48,7 @@ public:
 
 private:
     ZMotionDriver*   driver_;
+    CommandProtocol* commandProtocol_;
     JointProtocol    jointProtocol_;
     CartJogProtocol  cartJogProtocol_;
     TraceProtocol*   traceProtocol_;

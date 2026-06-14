@@ -146,27 +146,21 @@ Result TrajectoryService::startSendTrajectoryAsync(const QString& fileName)
 void TrajectoryService::cancelSendTrajectory()
 {
     if (sendWorker_ != nullptr) {
-        QMetaObject::invokeMethod(sendWorker_,
-                                  "cancel",
-                                  Qt::QueuedConnection);
+        sendWorker_->cancel();
     }
 }
 
 void TrajectoryService::pauseSendTrajectory()
 {
     if (sendWorker_ != nullptr) {
-        QMetaObject::invokeMethod(sendWorker_,
-                                  "pause",
-                                  Qt::QueuedConnection);
+        sendWorker_->pause();
     }
 }
 
 void TrajectoryService::resumeSendTrajectory()
 {
     if (sendWorker_ != nullptr) {
-        QMetaObject::invokeMethod(sendWorker_,
-                                  "resume",
-                                  Qt::QueuedConnection);
+        sendWorker_->resume();
     }
 }
 
@@ -178,24 +172,20 @@ bool TrajectoryService::isPaused() const
 bool TrajectoryService::stopSendThread(int timeoutMs)
 {
     if (sendThread_ == nullptr && sendWorker_ == nullptr) {
-        return true;  // 没有线程在跑
+        return true;
     }
 
-    // 先发取消信号
     cancelSendTrajectory();
 
-    // 等待线程结束
     if (sendThread_ != nullptr) {
         sendThread_->quit();
+
         if (!sendThread_->wait(timeoutMs)) {
-            // 超时：强制终止
-            sendThread_->terminate();
-            sendThread_->wait(1000);
-            qDebug() << "TrajectoryService::stopSendThread: thread terminated after timeout";
+            qDebug() << "TrajectoryService::stopSendThread: timeout waiting for worker to stop";
+            return false;
         }
     }
 
-    cleanupSendThread();
     return true;
 }
 

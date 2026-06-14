@@ -3,9 +3,10 @@
 AppContext::AppContext()
     : driver_(),
       protocol_(&driver_),
+      commandProtocol_(&driver_),
       traceProtocol_(&driver_),
       connectionService_(&driver_),
-      motionService_(&driver_, &traceProtocol_),
+      motionService_(&driver_, &commandProtocol_, &traceProtocol_),
       trajectoryService_(&driver_, &traceProtocol_, "../../trace_data/")
 {
 }
@@ -18,6 +19,11 @@ ZMotionDriver* AppContext::driver()
 ControllerProtocol* AppContext::protocol()
 {
     return &protocol_;
+}
+
+CommandProtocol* AppContext::commandProtocol()
+{
+    return &commandProtocol_;
 }
 
 TraceProtocol* AppContext::traceProtocol()

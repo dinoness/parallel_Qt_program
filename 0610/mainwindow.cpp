@@ -108,7 +108,7 @@ bool MainWindow::canEnterMode(MotionMode mode)
         QMessageBox::warning(this, "提示", "请先退出当前运动模式");
         return false;
     }
-    if (!ctx_->driver()->isOpen()) {
+    if (!ctx_->connectionService()->isConnected()) {
         QMessageBox::warning(this, "错误", "控制器未连接");
         return false;
     }
@@ -228,7 +228,7 @@ void MainWindow::updateTraceButtonStates()
 
 void MainWindow::sendHomeCmd()
 {
-    if (!ctx_->driver()->isOpen()) {
+    if (!ctx_->connectionService()->isConnected()) {
         QMessageBox::warning(this, "错误", "控制器未连接");
         return;
     }
@@ -303,7 +303,7 @@ void MainWindow::sendCartJogCmd()
 
 void MainWindow::openTraceThread()
 {
-    if (!ctx_->driver()->isOpen()) {
+    if (!ctx_->connectionService()->isConnected()) {
         QMessageBox::warning(this, "错误", "控制器未连接");
         return;
     }
@@ -337,7 +337,7 @@ void MainWindow::sendTraceFile()
         return;
     }
 
-    if (!ctx_->driver()->isOpen()) {
+    if (!ctx_->connectionService()->isConnected()) {
         QMessageBox::warning(this, "错误", "控制器未连接");
         return;
     }
@@ -496,7 +496,7 @@ void MainWindow::motion_cmd()
         return;
     }
 
-    if (!ctx_->driver()->isOpen()) {
+    if (!ctx_->connectionService()->isConnected()) {
         QMessageBox::warning(this, "错误", "控制器未连接");
         return;
     }
@@ -540,7 +540,7 @@ void MainWindow::on_btn_disconnect_controller_clicked()
 
 void MainWindow::on_btn_home_clicked()
 {
-    if (!ctx_->driver()->isOpen()) {
+    if (!ctx_->connectionService()->isConnected()) {
         QMessageBox::warning(this, "错误", "控制器未连接");
         return;
     }
@@ -707,7 +707,7 @@ void MainWindow::on_btn_trace_to_dat_clicked()
 
 void MainWindow::on_btn_pause_resume_clicked()
 {
-    if (!ctx_->driver()->isOpen()) {
+    if (!ctx_->connectionService()->isConnected()) {
         QMessageBox::warning(this, "错误", "控制器未连接");
         return;
     }
@@ -754,7 +754,7 @@ void MainWindow::on_btn_pause_resume_clicked()
 
 void MainWindow::on_btn_stop_clicked()
 {
-    if (!ctx_->driver()->isOpen()) {
+    if (!ctx_->connectionService()->isConnected()) {
         QMessageBox::warning(this, "错误", "控制器未连接");
         return;
     }
@@ -784,18 +784,15 @@ void MainWindow::on_btn_stop_clicked()
 
 void MainWindow::on_btn_emergency_stop_clicked()
 {
-    if (!ctx_->driver()->isOpen()) {
+    if (!ctx_->connectionService()->isConnected()) {
         QMessageBox::warning(this, "错误", "控制器未连接");
         return;
     }
 
-    // Trace 模式：先发取消信号让 Worker 退出堵塞循环，
-    // 不在此等待线程结束，避免阻塞 UI
-    if (currentMotionMode_ == MotionMode::Trace) {
-        ctx_->trajectoryService()->cancelSendTrajectory();
-    }
+    // 如果正在轨迹下发，先请求 worker 尽快退出（不等待线程结束，避免阻塞 UI）
+    ctx_->trajectoryService()->cancelSendTrajectory();
 
-    // 直接写 MODBUS，mutex 短暂排队后即可写入
+    // 执行软件急停：RapidStop(2) + ESTOP 事件
     Result ret = ctx_->motionService()->sendEstop();
     if (!ret.ok) {
         QMessageBox::warning(this, "Emergency Stop 失败", ret.message);
@@ -816,7 +813,7 @@ void MainWindow::on_btn_emergency_stop_clicked()
 
 void MainWindow::on_btn_error_reset_clicked()
 {
-    if (!ctx_->driver()->isOpen()) {
+    if (!ctx_->connectionService()->isConnected()) {
         QMessageBox::warning(this, "错误", "控制器未连接");
         return;
     }
