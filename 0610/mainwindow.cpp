@@ -57,6 +57,36 @@ void MainWindow::Init()
     connect(ctx_->connectionService(), &ConnectionService::connectionChanged,
             this, [this](bool connected) {
                 ui->statusbar->showMessage(connected ? "已连接" : "未连接");
+
+                if (connected) {
+                    ui->label_system_state->setText("Reading...");
+                    Result ret = ctx_->controllerInfoService()->startStateMonitor(kControllerStatePollIntervalMs);
+                    if (!ret.ok) {
+                        qDebug() << "Start state monitor failed:" << ret.message;
+                    }
+                } else {
+                    ctx_->controllerInfoService()->stopAll();
+                    ui->label_system_state->setText("Disconnected");
+                }
+            });
+
+    // ── 控制器状态监控 ────────────────────────────────
+    connect(ctx_->controllerInfoService(), &ControllerInfoService::stateUpdated,
+            this, [this](const ControllerStateSnapshot& snapshot) {
+                ui->label_system_state->setText(snapshot.systemStateText);
+            });
+
+    connect(ctx_->controllerInfoService(), &ControllerInfoService::monitorError,
+            this, [this](const Result& result) {
+                qDebug() << "Controller info monitor error:" << result.message;
+            });
+
+    // ── 传感器数据预留 ────────────────────────────────
+    connect(ctx_->controllerInfoService(), &ControllerInfoService::sensorBatchReceived,
+            this, [this](const SensorTableBatch& batch) {
+                qDebug() << "Sensor batch frames:" << batch.frames.size()
+                         << "overflow:" << batch.overflow
+                         << "dropped:" << batch.droppedFrames;
             });
 
     // ── 轨迹下发进度 ──────────────────────────────────
@@ -241,7 +271,6 @@ void MainWindow::sendHomeCmd()
     }
 
     ui->statusbar->showMessage("回零指令已下发", 3000);
-    ui->label_home_state->setText("Yes");
     qDebug() << "Home command sent to MODBUS[" << kRegEventLevel2
              << "] = " << kEventHome;
 }
@@ -410,6 +439,9 @@ void MainWindow::connect_Ether()
 void MainWindow::closeEther()
 {
     if (ctx_ == nullptr) return;
+
+    // 在断开连接前先停止监控线程，避免 Worker 继续读取已关闭的 handle
+    ctx_->controllerInfoService()->stopAll();
 
     Result ret = ctx_->connectionService()->disconnectFromController();
 

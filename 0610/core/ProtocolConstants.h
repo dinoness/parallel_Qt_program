@@ -26,6 +26,8 @@ constexpr int kRegEventLevel2         = 92;   // 事件寄存器
 // ===================================================================
 // 系统状态值
 // ===================================================================
+constexpr uint16_t kSysBoot = 0;
+constexpr uint16_t kSysBusInit = 1;
 constexpr uint16_t kSysServoReady = 2;
 constexpr uint16_t kSysHoming = 3;
 constexpr uint16_t kSysReady  = 4;
@@ -33,6 +35,7 @@ constexpr uint16_t kSysRunning  = 5;    // 控制器轨迹运行中
 constexpr uint16_t kSysPaused = 6;
 constexpr uint16_t kSysError = 8;
 constexpr uint16_t kSysEstop = 9;
+
 // ===================================================================
 // Direct Joint (Manual Joint)
 // ===================================================================
@@ -92,3 +95,29 @@ constexpr int kCmdPause  = 3;
 constexpr int kCmdResume = 4;
 constexpr int kCmdStop   = 5;
 constexpr int kCmdEstop  = 99;
+
+// ===================================================================
+// Controller Info / Sensor TABLE Upload
+// ===================================================================
+
+// 控制器状态轮询周期，属于低频监控
+constexpr int kControllerStatePollIntervalMs = 200;
+
+// 传感器 TABLE 环形缓冲默认配置，后续可根据控制器程序调整
+// 放在 8000 之后，与轨迹 TABLE (1000~7999) 不冲突
+constexpr int kSensorTableBase = 8000;
+constexpr int kSensorChannelCount = 12;
+
+// 默认预留 1024 帧，每帧 12 个 float
+constexpr int kSensorRingFrameCapacity = 1024;
+constexpr int kSensorFrameFloatCount = kSensorChannelCount;
+constexpr int kSensorTableFloatCount = kSensorRingFrameCapacity * kSensorFrameFloatCount;
+
+// 控制器端用于指示当前写入位置的寄存器，后续需与控制器程序对应
+constexpr int kRegSensorWriteIndex = 120;
+constexpr int kRegSensorFrameCounter = 121;
+constexpr int kRegSensorUploadStatus = 122;
+
+// 上位机默认批量上传周期，不等同于控制器采样周期
+// 控制器端可以 1 ms 写一次 TABLE，上位机每 20 ms / 50 ms 批量读一次
+constexpr int kSensorDefaultUploadIntervalMs = 20;

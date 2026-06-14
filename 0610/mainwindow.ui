@@ -249,20 +249,20 @@
      </rect>
     </property>
     <property name="text">
-     <string>Home State</string>
+     <string>System State</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_home_state">
+   <widget class="QLabel" name="label_system_state">
     <property name="geometry">
      <rect>
       <x>340</x>
       <y>130</y>
-      <width>81</width>
+      <width>141</width>
       <height>19</height>
      </rect>
     </property>
     <property name="text">
-     <string>No</string>
+     <string>Disconnected</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_6">

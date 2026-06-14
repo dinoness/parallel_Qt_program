@@ -218,3 +218,51 @@ Result ZMotionDriver::readModbusReg(int addr, uint16& value)
 
     return Result::success();
 }
+
+Result ZMotionDriver::getTable(int start, int count, QVector<float>& data)
+{
+    QMutexLocker locker(&mutex_);
+
+    if (!opened_ || handle_ == nullptr) {
+        return Result::fail(1006, "控制器未连接，无法读 TABLE");
+    }
+
+    data.resize(count);
+
+    int ret = ZAux_Direct_GetTable(handle_, start, count, data.data());
+
+    if (ret != 0) {
+        data.clear();
+        return Result::fail(
+            ret,
+            QString("读 TABLE(%1, %2) 失败，错误码=%3")
+                .arg(start).arg(count).arg(ret)
+        );
+    }
+
+    return Result::success();
+}
+
+Result ZMotionDriver::readModbusRegs(int start, int count, QVector<uint16>& values)
+{
+    QMutexLocker locker(&mutex_);
+
+    if (!opened_ || handle_ == nullptr) {
+        return Result::fail(1007, "控制器未连接，无法批量读 MODBUS_REG");
+    }
+
+    values.resize(count);
+
+    int ret = ZAux_Modbus_Get4x(handle_, start, count, values.data());
+
+    if (ret != 0) {
+        values.clear();
+        return Result::fail(
+            ret,
+            QString("批量读 MODBUS_REG(%1, %2) 失败，错误码=%3")
+                .arg(start).arg(count).arg(ret)
+        );
+    }
+
+    return Result::success();
+}

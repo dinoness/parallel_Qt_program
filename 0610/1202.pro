@@ -16,17 +16,21 @@ SOURCES += \
     motion/TrajectoryGenerator.cpp \
     protocol/CartJogProtocol.cpp \
     protocol/CommandProtocol.cpp \
+    protocol/ControllerInfoProtocol.cpp \
     protocol/ControllerProtocol.cpp \
     protocol/JointProtocol.cpp \
     protocol/TraceProtocol.cpp \
     service/ConnectionService.cpp \
+    service/ControllerInfoService.cpp \
     service/MotionService.cpp \
     service/TrajectoryService.cpp \
+    worker/ControllerInfoWorker.cpp \
     worker/TrajectorySendWorker.cpp \
     zmotion/ZMotionDriver.cpp
 
 HEADERS += \
     app/AppContext.h \
+    core/ControllerInfoTypes.h \
     core/ProtocolConstants.h \
     core/Result.h \
     mainwindow.h \
@@ -35,14 +39,17 @@ HEADERS += \
     motion/TrajectoryGenerator.h \
     protocol/CartJogProtocol.h \
     protocol/CommandProtocol.h \
+    protocol/ControllerInfoProtocol.h \
     protocol/ControllerProtocol.h \
     protocol/JointProtocol.h \
     protocol/TraceProtocol.h \
     service/ConnectionService.h \
+    service/ControllerInfoService.h \
     service/MotionService.h \
     service/TrajectoryService.h \
     third_party/zaux/zaux.h \
     third_party/zaux/zmotion.h \
+    worker/ControllerInfoWorker.h \
     worker/TrajectorySendWorker.h \
     zmotion/ZMotionDriver.h
 
