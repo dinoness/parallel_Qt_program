@@ -2,9 +2,14 @@
 0610/*.pro.user.*
 0610/*.pro.user
 0610/trace_data/
+
 1202/build/
 1202/*.pro.user.*
 1202/*.pro.user
 1202/trace_data/
-controller_file/
+
+1225/
+1229_mm_unit/
+
+
 *.pdf

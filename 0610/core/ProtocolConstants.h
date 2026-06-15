@@ -68,16 +68,16 @@ constexpr int kTrajBlockSize   = kTrajGroupSize * kTrajCmdSize;  // 700 = 每组
 constexpr int kRegTrajStatusBase  = 50;     // 指令执行状态REG地址 (50~69)
 
 // ===================================================================
-// 事件 ID (写入 MODBUS kRegEventLevel2 = 92)
+// Event ID
 // ===================================================================
 
 constexpr int kEventIdle        = 0;
 constexpr int kEventHome        = 1;
-constexpr int kEventJoint       = 3;  // 进入 Direct Joint
-constexpr int kEventJointDone   = 4;  // 退出 Direct Joint
+constexpr int kEventJoint       = 3;
+constexpr int kEventJointDone   = 4;
 constexpr int kEventCartJog     = 5;
 constexpr int kEventCartJogDone = 6;
-constexpr int kEventTraj        = 7;  // 进入 Trace
+constexpr int kEventTraj        = 7;
 constexpr int kEventStop        = 9;
 constexpr int kEventPause       = 10;
 constexpr int kEventResume      = 11;
@@ -91,10 +91,6 @@ constexpr int kEventEstop       = 99;
 constexpr int kCmdNone   = 0;
 constexpr int kCmdMove   = 1;
 constexpr int kCmdMoveAbs = 2;
-constexpr int kCmdPause  = 3;
-constexpr int kCmdResume = 4;
-constexpr int kCmdStop   = 5;
-constexpr int kCmdEstop  = 99;
 
 // ===================================================================
 // Controller Info / Sensor TABLE Upload
