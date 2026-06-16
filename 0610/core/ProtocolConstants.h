@@ -24,17 +24,18 @@ constexpr int kRegEventLevel1         = 91;
 constexpr int kRegEventLevel2         = 92;   // 事件寄存器
 
 // ===================================================================
-// 系统状态值
+// System Statue
 // ===================================================================
 constexpr uint16_t kSysBoot = 0;
 constexpr uint16_t kSysBusInit = 1;
 constexpr uint16_t kSysServoReady = 2;
 constexpr uint16_t kSysHoming = 3;
 constexpr uint16_t kSysReady  = 4;
-constexpr uint16_t kSysRunning  = 5;    // 控制器轨迹运行中
-constexpr uint16_t kSysPaused = 6;
-constexpr uint16_t kSysError = 8;
-constexpr uint16_t kSysEstop = 9;
+constexpr uint16_t kSysRobotMode = 5;
+constexpr uint16_t kSysRunning  = 6;
+constexpr uint16_t kSysPaused = 17;
+constexpr uint16_t kSysError = 18;
+constexpr uint16_t kSysEstop = 19;
 
 // ===================================================================
 // Direct Joint (Manual Joint)
@@ -78,9 +79,11 @@ constexpr int kEventJointDone   = 4;
 constexpr int kEventCartJog     = 5;
 constexpr int kEventCartJogDone = 6;
 constexpr int kEventTraj        = 7;
-constexpr int kEventStop        = 9;
-constexpr int kEventPause       = 10;
-constexpr int kEventResume      = 11;
+constexpr int kEventRobotIn     = 21;
+constexpr int kEventRobotOut    = 22;
+constexpr int kEventStop        = 80;
+constexpr int kEventPause       = 81;
+constexpr int kEventResume      = 82;
 constexpr int kEventErrorReset  = 90;
 constexpr int kEventEstop       = 99;
 

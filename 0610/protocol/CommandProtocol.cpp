@@ -62,3 +62,13 @@ Result CommandProtocol::sendErrorReset()
 {
     return sendEventLevel0(kEventErrorReset);
 }
+
+Result CommandProtocol::sendRobotIn()
+{
+    return sendEventLevel2(kEventRobotIn);
+}
+
+Result CommandProtocol::sendRobotOut()
+{
+    return sendEventLevel2(kEventRobotOut);
+}

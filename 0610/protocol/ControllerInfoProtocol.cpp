@@ -36,10 +36,11 @@ QString ControllerInfoProtocol::systemStateToText(uint16_t state)
     case kSysServoReady: return QString("ServoReady(2)");
     case kSysHoming:     return QString("Homing(3)");
     case kSysReady:      return QString("Ready(4)");
-    case kSysRunning:    return QString("Running(5)");
-    case kSysPaused:     return QString("Paused(6)");
-    case kSysError:      return QString("Error(8)");
-    case kSysEstop:      return QString("Estop(9)");
+    case kSysRobotMode:  return QString("RobotMode(5)");
+    case kSysRunning:    return QString("Running(6)");
+    case kSysPaused:     return QString("Paused(17)");
+    case kSysError:      return QString("Error(18)");
+    case kSysEstop:      return QString("Estop(19)");
     default:             return QString("Unknown(%1)").arg(state);
     }
 }

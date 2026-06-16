@@ -46,6 +46,10 @@ public:
     Result exitTraceMode();
     Result canExitTraceMode();
 
+    // ── Robot Mode ────────────────────────────────────
+    Result enterRobotMode();
+    Result exitRobotMode();
+
 private:
     ZMotionDriver*   driver_;
     CommandProtocol* commandProtocol_;

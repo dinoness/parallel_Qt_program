@@ -26,6 +26,10 @@ public:
     Result sendEstop();
     Result sendErrorReset();
 
+    // ── Robot Mode ───────────────────────────────────
+    Result sendRobotIn();
+    Result sendRobotOut();
+
 private:
     Result sendEvent(int regAddr, int eventId);
 

@@ -170,3 +170,21 @@ Result MotionService::canExitTraceMode()
 
     return traceProtocol_->canExitTrace();
 }
+
+// ── Robot Mode ────────────────────────────────────────
+
+Result MotionService::enterRobotMode()
+{
+    if (commandProtocol_ == nullptr) {
+        return Result::fail(3801, "CommandProtocol 未初始化");
+    }
+    return commandProtocol_->sendRobotIn();
+}
+
+Result MotionService::exitRobotMode()
+{
+    if (commandProtocol_ == nullptr) {
+        return Result::fail(3802, "CommandProtocol 未初始化");
+    }
+    return commandProtocol_->sendRobotOut();
+}

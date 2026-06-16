@@ -75,7 +75,8 @@ private slots:
     void on_btn_xlsx_to_dat_clicked();
     void on_btn_trace_to_dat_clicked();
 
-
+    void on_btn_robo_mode_in_clicked();
+    void on_btn_robo_mode_out_clicked();
 
 private:
     // ── 模式切换 ──────────────────────────────────────
@@ -84,6 +85,11 @@ private:
     void exitCurrentMode();
     void updateMotionModeDisplay();
     void updateTraceButtonStates();
+
+    // ── Robot Mode ──────────────────────────────────────
+    void enterRobotMode();
+    void exitRobotMode();
+    void updateRobotModeButtons();
 
     // ── 运动指令 ──────────────────────────────────────
     void sendDirectJointCmd();
@@ -103,6 +109,7 @@ private:
 
     MotionMode currentMotionMode_ = MotionMode::None;
     bool traceThreadOpened_ = false;
+    bool robotModeActive_ = false;
 };
 
 #endif // MAINWINDOW_H

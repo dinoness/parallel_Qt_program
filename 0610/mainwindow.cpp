@@ -37,6 +37,8 @@ void MainWindow::Init()
     ui->btn_thread_close->setEnabled(false);
     ui->btn_trace_send->setEnabled(false);
     ui->btn_trace_exit->setEnabled(false);
+    ui->btn_robo_mode_in->setEnabled(true);
+    ui->btn_robo_mode_out->setEnabled(false);
 
     // ── 输入框默认值 ──────────────────────────────────
     ui->ledit_d_j1->setText("0");
@@ -67,6 +69,8 @@ void MainWindow::Init()
                 } else {
                     ctx_->controllerInfoService()->stopAll();
                     ui->label_system_state->setText("Disconnected");
+                    robotModeActive_ = false;
+                    updateRobotModeButtons();
                 }
             });
 
@@ -140,6 +144,12 @@ bool MainWindow::canEnterMode(MotionMode mode)
     }
     if (!ctx_->connectionService()->isConnected()) {
         QMessageBox::warning(this, "错误", "控制器未连接");
+        return false;
+    }
+    // Cart Jog / Trace 必须先进入 Robot Mode
+    if ((mode == MotionMode::CartJog || mode == MotionMode::Trace)
+        && !robotModeActive_) {
+        QMessageBox::warning(this, "错误", "请先进入 Robot Mode");
         return false;
     }
     return true;
@@ -251,6 +261,51 @@ void MainWindow::updateTraceButtonStates()
     ui->btn_thread_close->setEnabled(traceThreadOpened_);
     ui->btn_trace_send->setEnabled(traceThreadOpened_);
 }
+
+void MainWindow::enterRobotMode()
+{
+    if (robotModeActive_) {
+        QMessageBox::information(this, "提示", "已在 Robot Mode 中");
+        return;
+    }
+
+    Result ret = ctx_->motionService()->enterRobotMode();
+    if (!ret.ok) {
+        QMessageBox::warning(this, "进入 Robot Mode 失败", ret.message);
+        return;
+    }
+
+    robotModeActive_ = true;
+    updateRobotModeButtons();
+    ui->statusbar->showMessage("进入 Robot Mode", 3000);
+    qDebug() << "RobotModeIn command sent to MODBUS[" << kRegEventLevel2
+             << "] = " << kEventRobotIn;
+}
+
+void MainWindow::exitRobotMode()
+{
+    if (!robotModeActive_) return;
+
+    Result ret = ctx_->motionService()->exitRobotMode();
+    if (!ret.ok) {
+        QMessageBox::warning(this, "退出 Robot Mode 失败", ret.message);
+        return;
+    }
+
+    robotModeActive_ = false;
+    updateRobotModeButtons();
+    ui->statusbar->showMessage("退出 Robot Mode", 3000);
+    qDebug() << "RobotModeOut command sent to MODBUS[" << kRegEventLevel2
+             << "] = " << kEventRobotOut;
+}
+
+void MainWindow::updateRobotModeButtons()
+{
+    ui->btn_robo_mode_in->setEnabled(!robotModeActive_);
+    ui->btn_robo_mode_out->setEnabled(robotModeActive_);
+}
+
+
 
 // ===================================================================
 // Home
@@ -583,6 +638,10 @@ void MainWindow::on_btn_home_clicked()
 
 void MainWindow::on_btn_direct_joint_enter_clicked()
 {
+    // 进入 Direct Joint 前自动退出 Robot Mode
+    if (robotModeActive_) {
+        exitRobotMode();
+    }
     if (!canEnterMode(MotionMode::DirectJoint)) return;
     enterMode(MotionMode::DirectJoint);
     ui->statusbar->showMessage("进入 Direct Joint 模式");
@@ -859,5 +918,27 @@ void MainWindow::on_btn_error_reset_clicked()
     ui->statusbar->showMessage("Error Reset 指令已下发", 3000);
     qDebug() << "ErrorReset command sent to MODBUS[" << kRegEventLevel0
              << "] = " << kEventErrorReset;
+}
+
+
+// ── Robot Mode ──────────────────────────────────────────
+
+void MainWindow::on_btn_robo_mode_in_clicked()
+{
+    if (!ctx_->connectionService()->isConnected()) {
+        QMessageBox::warning(this, "错误", "控制器未连接");
+        return;
+    }
+    enterRobotMode();
+}
+
+void MainWindow::on_btn_robo_mode_out_clicked()
+{
+    // 如果 Cart Jog 或 Trace 模式处于激活状态，先退出
+    if (currentMotionMode_ == MotionMode::CartJog
+        || currentMotionMode_ == MotionMode::Trace) {
+        exitCurrentMode();
+    }
+    exitRobotMode();
 }
 
