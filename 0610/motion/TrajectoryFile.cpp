@@ -25,9 +25,9 @@ Result TrajectoryFile::writeDat(const QString& fileName, const QVector<Trajector
     out.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
     for (const TrajectoryPoint& p : points) {
-        float arr[kCmdSize];
+        float arr[kTrajCmdSize];
         p.toArray(arr);
-        for (int i = 0; i < kCmdSize; ++i) {
+        for (int i = 0; i < kTrajCmdSize; ++i) {
             out << arr[i];
         }
     }
@@ -54,9 +54,9 @@ Result TrajectoryFile::readDat(const QString& fileName, QVector<TrajectoryPoint>
     in.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
     while (!in.atEnd()) {
-        float arr[kCmdSize];
+        float arr[kTrajCmdSize];
         bool ok = true;
-        for (int i = 0; i < kCmdSize; ++i) {
+        for (int i = 0; i < kTrajCmdSize; ++i) {
             in >> arr[i];
             if (in.status() != QDataStream::Ok) {
                 ok = false;
@@ -120,7 +120,7 @@ Result TrajectoryFile::readCsv(const QString& fileName, QVector<TrajectoryPoint>
         if (line.isEmpty()) continue;
 
         QStringList parts = line.split(',');
-        if (parts.size() < kCmdSize) continue;
+        if (parts.size() < kTrajCmdSize) continue;
 
         TrajectoryPoint p;
         p.cmd   = parts[0].toFloat();

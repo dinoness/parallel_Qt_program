@@ -6,8 +6,6 @@
 // 共享常量
 // ===================================================================
 
-constexpr int kCmdSize = 7;  // 每条指令 7 个 float: [cmd, ...]
-
 // ── 数据状态 ─────────────────────────────────────────
 constexpr uint16_t kDataUpdate = 1;  // 已更新，等待控制器消费
 constexpr uint16_t kDataUsed   = 2;  // 已使用，控制器已取走
@@ -94,6 +92,14 @@ constexpr int kEventEstop       = 99;
 constexpr int kCmdNone   = 0;
 constexpr int kCmdMove   = 1;
 constexpr int kCmdMoveAbs = 2;
+
+// ===================================================================
+// 运动速度等级
+// ===================================================================
+
+constexpr int kSpeedLevel1   = 1;
+constexpr int kSpeedLevel2   = 2;
+constexpr int kSpeedLevel3   = 3;
 
 // ===================================================================
 // Controller Info / Sensor TABLE Upload

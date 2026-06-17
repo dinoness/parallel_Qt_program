@@ -17,7 +17,7 @@ struct TrajectoryPoint {
     TrajectoryPoint()
         : cmd(0), x(0), y(0), z(0), theta(0), phi(0), ticks(0) {}
 
-    void toArray(float arr[kCmdSize]) const {
+    void toArray(float arr[kTrajCmdSize]) const {
         arr[0] = cmd;
         arr[1] = x;
         arr[2] = y;
@@ -27,7 +27,7 @@ struct TrajectoryPoint {
         arr[6] = ticks;
     }
 
-    static TrajectoryPoint fromArray(const float arr[kCmdSize]) {
+    static TrajectoryPoint fromArray(const float arr[kTrajCmdSize]) {
         TrajectoryPoint p;
         p.cmd = arr[0];
         p.x = arr[1];

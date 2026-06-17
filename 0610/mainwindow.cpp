@@ -51,7 +51,12 @@ void MainWindow::Init()
     ui->ledit_jog_z->setText("0");
     ui->ledit_jog_phi->setText("0");
     ui->ledit_jog_theta->setText("0");
-    ui->ledit_speed_level->setText("0");
+
+    ui->cbox_speed_level->clear();
+    ui->cbox_speed_level->addItem("L1");
+    ui->cbox_speed_level->addItem("L2");
+    ui->cbox_speed_level->addItem("L3");
+    ui->cbox_speed_level->setCurrentIndex(1);  // 默认 L2
 
     updateMotionModeDisplay();
 
@@ -341,7 +346,7 @@ void MainWindow::sendDirectJointCmd()
     float j3 = ui->ledit_d_j3->text().toFloat();
     float j4 = ui->ledit_d_j4->text().toFloat();
     float j5 = ui->ledit_d_j5->text().toFloat();
-    int speedLevel = ui->ledit_speed_level->text().toInt();
+    int speedLevel = ui->cbox_speed_level->currentIndex() + 1;  // L1=1, L2=2, L3=3
 
     Result ret = ctx_->motionService()->sendDirectJoint(j1, j2, j3, j4, j5, speedLevel);
     if (!ret.ok) {
@@ -367,7 +372,7 @@ void MainWindow::sendCartJogCmd()
     float z = ui->ledit_jog_z->text().toFloat();
     float phi = ui->ledit_jog_phi->text().toFloat();
     float theta = ui->ledit_jog_theta->text().toFloat();
-    int speedLevel = ui->ledit_speed_level->text().toInt();
+    int speedLevel = ui->cbox_speed_level->currentIndex() + 1;  // L1=1, L2=2, L3=3
 
     Result ret = ctx_->motionService()->sendCartJog(cmdId, x, y, z, phi, theta, speedLevel);
     if (!ret.ok) {

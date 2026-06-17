@@ -238,7 +238,7 @@ ctx_->controllerInfoService()->startSensorUpload(config);
 - **命名约定**:
   - 类名：PascalCase（`ZMotionDriver`, `TrajectoryService`）
   - 成员变量：`xxx_` 后缀（`driver_`, `sending_`）
-  - 常量：`k` 前缀 + PascalCase（`kCmdSize`, `kRegSystemState`）
+  - 常量：`k` 前缀 + PascalCase（`kTrajCmdSize`, `kRegSystemState`）
   - 事件/状态常量：`k` 前缀（`kEventHome`, `kSysReady`）
 - **错误处理**: 使用 `Result` 类型（ok + code + message），不使用异常
 - **线程安全**: `ZMotionDriver` 使用 `QMutex` 保护所有 API 调用；Worker 使用 `std::atomic_bool` 做取消/暂停标志

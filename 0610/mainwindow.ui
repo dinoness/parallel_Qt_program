@@ -232,7 +232,7 @@
       <x>50</x>
       <y>130</y>
       <width>141</width>
-      <height>28</height>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
@@ -289,16 +289,6 @@
     </property>
     <property name="text">
      <string>ENTER</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="ledit_speed_level">
-    <property name="geometry">
-     <rect>
-      <x>230</x>
-      <y>130</y>
-      <width>91</width>
-      <height>31</height>
-     </rect>
     </property>
    </widget>
    <widget class="QLabel" name="label_7">
@@ -799,6 +789,16 @@
     </property>
     <property name="text">
      <string>EXIT</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="cbox_speed_level">
+    <property name="geometry">
+     <rect>
+      <x>230</x>
+      <y>130</y>
+      <width>91</width>
+      <height>31</height>
+     </rect>
     </property>
    </widget>
   </widget>
