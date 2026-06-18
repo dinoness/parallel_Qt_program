@@ -7,7 +7,7 @@
 /// @brief 笛卡尔 Jog 协议 — 封装 Cart Jog 模式的 TABLE 写入与 MODBUS 寄存器操作
 ///
 /// 每次下发覆盖 TABLE[kCartJogTableStart]，无缓冲。
-/// 下发前校验系统状态: 仅 kSysReady。
+/// 下发前校验系统状态: 仅 kSysRobotMode (5)。
 class CartJogProtocol
 {
 public:

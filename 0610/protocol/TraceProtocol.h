@@ -23,7 +23,7 @@ struct TrajectorySendOptions
 /// @brief 轨迹模式协议 — 封装 Trace 模式的所有协议操作
 ///
 /// 轨迹下发: 流式读取 .dat 文件，分组写入 TABLE[kTrajTableStart]。
-/// 下发前校验系统状态 == kSysReady，先统一置状态寄存器为 kDataBlank 再发事件。
+/// 下发前校验系统状态 == kSysRobotMode (5)，先统一置状态寄存器为 kDataBlank 再发事件。
 class TraceProtocol
 {
 public:

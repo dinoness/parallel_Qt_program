@@ -38,15 +38,15 @@ Result CartJogProtocol::sendCartJogCommand(const float cmd[kCartJogCmdSize])
         return Result::fail(3504, "ZMotionDriver 未初始化");
     }
 
-    // 1. 读取系统状态，仅 kSysReady 允许下发
+    // 1. 读取系统状态，仅 kSysRobotMode 允许下发
     uint16_t sysState = 0;
     Result ret = driver_->readModbusReg(kRegSystemState, sysState);
     if (!ret.ok) return ret;
 
-    if (sysState != kSysReady) {
+    if (sysState != kSysRobotMode) {
         return Result::fail(3520,
             QString("系统状态不允许下发 Cart Jog 指令 (当前=%1, 需要=%2)")
-                .arg(sysState).arg(kSysReady));
+                .arg(sysState).arg(kSysRobotMode));
     }
 
     // 2. 写入指令数据到固定 TABLE 地址

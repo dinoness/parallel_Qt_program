@@ -61,15 +61,15 @@ Result TraceProtocol::sendTrajectory(const QString& datFilePath,
                                       int totalPoints,
                                       const TrajectorySendOptions& options)
 {
-    // 1. 校验系统状态：仅 kSysReady 允许下发
+    // 1. 校验系统状态：仅 kSysRobotMode 允许下发
     uint16_t sysState = 0;
     Result ret = driver_->readModbusReg(kRegSystemState, sysState);
     if (!ret.ok) return ret;
 
-    if (sysState != kSysReady) {
+    if (sysState != kSysRobotMode) {
         return Result::fail(3415,
             QString("系统状态不允许下发 Trace (当前=%1, 需要=%2)")
-                .arg(sysState).arg(kSysReady));
+                .arg(sysState).arg(kSysRobotMode));
     }
 
     // 2. 将所有轨迹状态寄存器统一置为 kDataBlank
